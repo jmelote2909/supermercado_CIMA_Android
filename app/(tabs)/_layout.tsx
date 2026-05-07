@@ -1,33 +1,72 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Tabs, useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Platform, TouchableOpacity, Alert } from 'react-native';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const router = useRouter();
+  
+  const handleLogout = () => {
+    Alert.alert(
+      "Cerrar sesión",
+      "¿Estás seguro de que quieres salir?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Salir", 
+          style: "destructive",
+          onPress: () => {
+            setTimeout(() => {
+              router.replace('/');
+            }, 100);
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
+        headerStyle: {
+          backgroundColor: '#111827',
+          shadowColor: 'transparent',
+          elevation: 0,
+        },
+        headerTintColor: '#FFFFFF',
+        headerRight: () => (
+          <TouchableOpacity 
+            onPress={handleLogout} 
+            style={{ marginRight: 15, padding: 10 }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <MaterialCommunityIcons name="logout" size={24} color="#EF4444" />
+          </TouchableOpacity>
+        ),
+        tabBarStyle: {
+          backgroundColor: '#111827',
+          borderTopColor: '#374151',
+          height: Platform.OS === 'ios' ? 85 : 65,
+          paddingBottom: Platform.OS === 'ios' ? 25 : 10,
+        },
+        tabBarActiveTintColor: '#10B981',
+        tabBarInactiveTintColor: '#6B7280',
       }}>
       <Tabs.Screen
-        name="index"
+        name="shop"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Catálogo',
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="storefront-outline" size={26} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="orders"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Pedidos',
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="clipboard-text-outline" size={26} color={color} />
+          ),
         }}
       />
     </Tabs>
