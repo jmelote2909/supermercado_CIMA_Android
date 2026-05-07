@@ -21,16 +21,15 @@ export default function AdminLoginScreen() {
     
     setLoading(true);
     try {
-      // Obtenemos las credenciales configuradas en el servidor para comparar
-      const [userRes, passRes] = await Promise.all([
-        fetch(`${API_URL}/config/admin_user`),
-        fetch(`${API_URL}/config/admin_pass`)
-      ]);
+      const res = await fetch(`${API_URL}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email, password })
+      });
       
-      const userData = await userRes.json();
-      const passData = await passRes.json();
+      const data = await res.json();
       
-      if (email === userData.admin_user && password === passData.admin_pass) {
+      if (data.success) {
         router.replace('/admin');
       } else {
         alert('Credenciales de administrador incorrectas');

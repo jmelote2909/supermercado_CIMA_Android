@@ -4,6 +4,7 @@ const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const path = require('path');
 const nodemailer = require('nodemailer');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 app.use(cors());
@@ -58,21 +59,19 @@ let db;
   `);
 
   // Initial Data
-  const adminExists = await db.get('SELECT * FROM users WHERE username = ?', ['admin']);
-  if (!adminExists) {
-    await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', 'admin123', 'Admin']);
+  const adminUserExists = await db.get('SELECT * FROM users WHERE username = ?', ['admin']);
+  if (!adminUserExists) {
+    const hashedPass = await bcrypt.hash('admin123', 10);
+    await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', hashedPass, 'Admin']);
   }
 
-  const configExists = await db.get('SELECT * FROM config WHERE key = ?', ['target_email']);
-  if (!configExists) {
-  const configExists = await db.get('SELECT * FROM config WHERE key = ?', ['target_email']);
-  if (!configExists) {
-    await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['target_email', 'jemeo29@gmail.com']);
-    await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['smtp_email', 'jemeo29@gmail.com']);
-    await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['smtp_pass', 'vvxytttkpdqnazpe']);
-    await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['admin_user', 'admin']);
-    await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['admin_pass', 'Cima1100']);
-  }
+  const adminConfigExists = await db.get('SELECT key FROM config WHERE key = "admin_user"');
+  if (!adminConfigExists) {
+    const hashedPass = await bcrypt.hash('1234', 10);
+    await db.run("INSERT INTO config (key, value) VALUES ('admin_user', 'admin')");
+    await db.run("INSERT INTO config (key, value) VALUES ('admin_pass', ?)", [hashedPass]);
+    await db.run("INSERT INTO config (key, value) VALUES ('target_email', 'tu-email@gmail.com')");
+    await db.run("INSERT INTO config (key, value) VALUES ('smtp_pass', '')");
   }
 
   console.log('Database initialized');
@@ -129,11 +128,24 @@ async function sendOrderEmail(targetEmail, order) {
 // --- Users ---
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  const user = await db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
-  if (user) {
+  const user = await db.get('SELECT * FROM users WHERE username = ?', [username]);
+  
+  if (user && await bcrypt.compare(password, user.password)) {
     res.json({ success: true, user });
   } else {
     res.status(401).json({ success: false, message: 'Credenciales inválidas' });
+  }
+});
+
+app.post('/api/admin/login', async (req, res) => {
+  const { username, password } = req.body;
+  const adminUser = await db.get('SELECT value FROM config WHERE key = "admin_user"');
+  const adminPass = await db.get('SELECT value FROM config WHERE key = "admin_pass"');
+
+  if (adminUser && adminPass && username === adminUser.value && await bcrypt.compare(password, adminPass.value)) {
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ success: false, message: 'Acceso denegado' });
   }
 });
 
@@ -145,7 +157,8 @@ app.get('/api/users', async (req, res) => {
 app.post('/api/users', async (req, res) => {
   const { username, password, role } = req.body;
   try {
-    await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, password, role || 'User']);
+    const hashedPass = await bcrypt.hash(password, 10);
+    await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPass, role || 'User']);
     res.json({ success: true });
   } catch (e) {
     res.status(400).json({ success: false, message: 'El usuario ya existe' });
