@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator, Modal } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../constants/API';
 
 const { width } = Dimensions.get('window');
@@ -13,10 +14,17 @@ export default function ShopScreen() {
   const [categories, setCategories] = useState(['Todos']);
   const [loading, setLoading] = useState(true);
   const [isCartVisible, setCartVisible] = useState(false);
+  const [currentUser, setCurrentUser] = useState('');
 
   useEffect(() => {
+    loadUser();
     fetchData();
   }, []);
+
+  const loadUser = async () => {
+    const user = await AsyncStorage.getItem('username');
+    if (user) setCurrentUser(user);
+  };
 
   const fetchData = async () => {
     try {
@@ -52,7 +60,7 @@ export default function ShopScreen() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: 'usuario_demo', // Esto vendría de un Auth real
+          username: currentUser || 'Usuario', 
           items: cart,
           status: 'Pendiente',
           date: new Date().toLocaleString()

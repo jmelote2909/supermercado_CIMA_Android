@@ -65,35 +65,34 @@ let db;
 
   const configExists = await db.get('SELECT * FROM config WHERE key = ?', ['target_email']);
   if (!configExists) {
+  const configExists = await db.get('SELECT * FROM config WHERE key = ?', ['target_email']);
+  if (!configExists) {
     await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['target_email', 'jemeo29@gmail.com']);
-    await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['admin_email', 'jemeo29@gmail.com']);
-    await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['admin_password', 'vvxytttkpdqnazpe']);
+    await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['smtp_email', 'jemeo29@gmail.com']);
+    await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['smtp_pass', 'vvxytttkpdqnazpe']);
+    await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['admin_user', 'admin']);
+    await db.run('INSERT INTO config (key, value) VALUES (?, ?)', ['admin_pass', 'Cima1100']);
+  }
   }
 
   console.log('Database initialized');
 })();
 
+
 // Función para obtener el transporter con los datos actuales de la DB
-async function getTransporter() {
-  const adminEmail = await db.get('SELECT value FROM config WHERE key = "admin_email"');
-  const adminPass = await db.get('SELECT value FROM config WHERE key = "admin_password"');
+async function sendOrderEmail(targetEmail, order) {
+  const smtpPass = await db.get('SELECT value FROM config WHERE key = ?', ['smtp_pass']);
 
-  if (!adminEmail || !adminPass) {
-    throw new Error('Faltan credenciales de Gmail en la configuración');
-  }
+  if (!targetEmail || !smtpPass) return;
 
-  return nodemailer.createTransport({
+  const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: adminEmail.value,
-      pass: adminPass.value
+      user: targetEmail,
+      pass: smtpPass.value
     }
   });
-}
 
-async function sendOrderEmail(targetEmail, order) {
-  const adminEmail = await db.get('SELECT value FROM config WHERE key = "admin_email"');
-  const transporter = await getTransporter();
   const items = JSON.parse(order.items);
   let itemsHtml = '<ul>';
   items.forEach(item => {
@@ -102,7 +101,7 @@ async function sendOrderEmail(targetEmail, order) {
   itemsHtml += '</ul>';
 
   const mailOptions = {
-    from: `"Supermercado CIMA" <${adminEmail.value}>`,
+    from: `"Supermercado CIMA" <${targetEmail}>`,
     to: targetEmail,
     subject: `Nuevo Pedido Recibido - ${order.username}`,
     html: `
@@ -174,6 +173,17 @@ app.post('/api/categories', async (req, res) => {
   }
 });
 
+app.patch('/api/categories/:id', async (req, res) => {
+  const { name } = req.body;
+  await db.run('UPDATE categories SET name = ? WHERE id = ?', [name, req.params.id]);
+  res.json({ success: true });
+});
+
+app.delete('/api/categories/:id', async (req, res) => {
+  await db.run('DELETE FROM categories WHERE id = ?', [req.params.id]);
+  res.json({ success: true });
+});
+
 // --- Products ---
 app.get('/api/products', async (req, res) => {
   const products = await db.all('SELECT * FROM products');
@@ -183,6 +193,17 @@ app.get('/api/products', async (req, res) => {
 app.post('/api/products', async (req, res) => {
   const { name, category_name, image } = req.body;
   await db.run('INSERT INTO products (name, category_name, image) VALUES (?, ?, ?)', [name, category_name, image]);
+  res.json({ success: true });
+});
+
+app.patch('/api/products/:id', async (req, res) => {
+  const { name, category_name, image } = req.body;
+  await db.run('UPDATE products SET name = ?, category_name = ?, image = ? WHERE id = ?', [name, category_name, image, req.params.id]);
+  res.json({ success: true });
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+  await db.run('DELETE FROM products WHERE id = ?', [req.params.id]);
   res.json({ success: true });
 });
 
@@ -215,28 +236,35 @@ app.patch('/api/orders/:id', async (req, res) => {
 
 // --- Config ---
 app.get('/api/config/:key', async (req, res) => {
-  const config = await db.get('SELECT value FROM config WHERE key = ?', [req.params.key]);
-  res.json({ [req.params.key]: config ? config.value : '' });
+  const row = await db.get('SELECT value FROM config WHERE key = ?', [req.params.key]);
+  res.json({ [req.params.key]: row ? row.value : '' });
 });
 
-app.post('/api/config/email_credentials', async (req, res) => {
-  const { admin_email, admin_password, target_email } = req.body;
-  if (admin_email) await db.run('UPDATE config SET value = ? WHERE key = "admin_email"', [admin_email]);
-  if (admin_password) {
-    // Limpiamos la contraseña de espacios (incluyendo espacios especiales)
-    const cleanPass = admin_password.replace(/\s/g, '');
-    await db.run('UPDATE config SET value = ? WHERE key = "admin_password"', [cleanPass]);
-  }
-  if (target_email) await db.run('UPDATE config SET value = ? WHERE key = "target_email"', [target_email]);
+app.post('/api/config', async (req, res) => {
+  const { key, value } = req.body;
+  await db.run('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', [key, value]);
   res.json({ success: true });
 });
 
 app.post('/api/config/test_email', async (req, res) => {
   try {
     const target = await db.get('SELECT value FROM config WHERE key = "target_email"');
-    const transporter = await getTransporter();
+    const smtpPass = await db.get('SELECT value FROM config WHERE key = "smtp_pass"');
+    
+    if (!target || !smtpPass) {
+      throw new Error('Configuración incompleta');
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: target.value,
+        pass: smtpPass.value
+      }
+    });
+
     await transporter.sendMail({
-      from: '"Supermercado CIMA" <Prueba>',
+      from: `"Supermercado CIMA" <${target.value}>`,
       to: target.value,
       subject: 'Prueba de Conexión - Supermercado CIMA',
       text: 'Si recibes esto, la configuración de tu App es correcta.'

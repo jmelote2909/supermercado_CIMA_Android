@@ -6,6 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../constants/API';
 
 const { width } = Dimensions.get('window');
@@ -30,6 +31,7 @@ export default function LoginScreen() {
       const data = await response.json();
       
       if (data.success) {
+        await AsyncStorage.setItem('username', username);
         router.replace('/(tabs)/shop');
       } else {
         alert(data.message || 'Error al iniciar sesión');
@@ -97,8 +99,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.adminLink} onPress={() => {
-              // Temporary backdoor to admin panel
-              router.push('/admin');
+              router.push('/admin-login');
             }}>
               <Text style={styles.adminText}>Acceso Administrador</Text>
             </TouchableOpacity>

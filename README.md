@@ -7,7 +7,6 @@ Esta es la aplicación móvil oficial del **Supermercado CIMA**, desarrollada co
 - **Core:** [React Native](https://reactnative.dev/) & [Expo](https://expo.dev/)
 - **Navegación:** [Expo Router](https://docs.expo.dev/router/introduction) (Basada en archivos)
 - **Backend/Base de Datos:** [Firebase](https://firebase.google.com/)
-- **Notificaciones por Correo:** [EmailJS](https://www.emailjs.com/)
 - **Estilos:** Expo Linear Gradient & Vector Icons
 - **Estado y Efectos:** React Hooks (useState, useEffect)
 
@@ -36,7 +35,6 @@ Desde la terminal de Expo, puedes presionar `a` para abrir en un emulador de And
 - **Tienda Virtual:** Catálogo interactivo de productos con búsqueda y filtros.
 - **Gestión de Pedidos:** Visualización y seguimiento de órdenes realizadas.
 - **Panel de Administración:** Gestión de inventario, pedidos y configuraciones del sistema (accesible vía `admin.tsx`).
-- **Notificaciones:** Integración con EmailJS para alertas de nuevos pedidos.
 - **Carga de Imágenes:** Soporte para subir fotos de productos mediante `expo-image-picker`.
 
 ## 📂 Estructura del Proyecto

@@ -7,8 +7,8 @@ import { API_URL } from '../constants/API';
 
 export default function AdminScreen() {
   const router = useRouter();
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
+  const [smtpPassword, setSmtpPassword] = useState('');
+  const [targetEmail, setTargetEmail] = useState('');
   const [newUserUsername, setNewUserUsername] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [editingUserId, setEditingUserId] = useState(null);
@@ -17,7 +17,10 @@ export default function AdminScreen() {
   // Estados reales vinculados a la DB
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
   const [newCategory, setNewCategory] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [editingProductId, setEditingProductId] = useState(null);
   
   const [productName, setProductName] = useState('');
   const [productCategory, setProductCategory] = useState('');
@@ -30,25 +33,28 @@ export default function AdminScreen() {
 
   const fetchData = async () => {
     try {
-      const [uRes, cRes, aRes, pRes] = await Promise.all([
+      const [uRes, cRes, passRes, targetRes, prRes] = await Promise.all([
         fetch(`${API_URL}/users`),
         fetch(`${API_URL}/categories`),
-        fetch(`${API_URL}/config/admin_email`),
-        fetch(`${API_URL}/config/admin_password`)
+        fetch(`${API_URL}/config/smtp_pass`),
+        fetch(`${API_URL}/config/target_email`),
+        fetch(`${API_URL}/products`)
       ]);
-      const [uData, cData, aData, pData] = await Promise.all([
-        uRes.json(), cRes.json(), aRes.json(), pRes.json()
+      const [uData, cData, passData, targetData, prData] = await Promise.all([
+        uRes.json(), cRes.json(), passRes.json(), targetRes.json(), prRes.json()
       ]);
       setUsers(uData);
-      setCategories(cData.map(c => c.name));
-      setAdminEmail(aData.admin_email);
-      setAdminPassword(pData.admin_password);
+      setCategories(cData);
+      setProducts(prData);
+      setSmtpPassword(passData.smtp_pass);
+      setTargetEmail(targetData.target_email);
     } catch (e) {
       alert('Error conectando con el servidor');
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleTestEmail = async () => {
     setLoading(true);
@@ -58,7 +64,7 @@ export default function AdminScreen() {
       });
       const data = await res.json();
       if (data.success) {
-        alert('Email de prueba enviado con éxito a ' + adminEmail);
+        alert('Email de prueba enviado con éxito a ' + targetEmail);
       } else {
         throw new Error(data.message);
       }
@@ -71,16 +77,20 @@ export default function AdminScreen() {
 
   const handleSaveConfig = async () => {
     try {
-      await fetch(`${API_URL}/config/email_credentials`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          target_email: adminEmail,
-          admin_email: adminEmail,
-          admin_password: adminPassword
+      await Promise.all([
+        fetch(`${API_URL}/config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'smtp_pass', value: smtpPassword })
+        }),
+        fetch(`${API_URL}/config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'target_email', value: targetEmail })
         })
-      });
+      ]);
       alert('Configuración guardada correctamente');
+      fetchData();
     } catch (e) { alert('Error al guardar'); }
   };
 
@@ -121,31 +131,70 @@ export default function AdminScreen() {
   const handleAddCategory = async () => {
     if (newCategory) {
       try {
-        const res = await fetch(`${API_URL}/categories`, {
-          method: 'POST',
+        const url = editingCategoryId ? `${API_URL}/categories/${editingCategoryId}` : `${API_URL}/categories`;
+        const method = editingCategoryId ? 'PATCH' : 'POST';
+        const res = await fetch(url, {
+          method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: newCategory })
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.message);
         setNewCategory('');
+        setEditingCategoryId(null);
         fetchData();
       } catch (e) { alert(e.message); }
     }
   };
 
+  const handleDeleteCategory = async (id) => {
+    Alert.alert("Eliminar", "¿Seguro que quieres eliminar esta categoría? Esto podría afectar a los productos asociados.", [
+      { text: "No" },
+      { text: "Sí", onPress: async () => {
+        await fetch(`${API_URL}/categories/${id}`, { method: 'DELETE' });
+        fetchData();
+      }}
+    ]);
+  };
+
+  const handleEditCategory = (cat) => {
+    setNewCategory(cat.name);
+    setEditingCategoryId(cat.id);
+  };
+
   const handleAddProduct = async () => {
     if (productName && productCategory) {
-      await fetch(`${API_URL}/products`, {
-        method: 'POST',
+      const url = editingProductId ? `${API_URL}/products/${editingProductId}` : `${API_URL}/products`;
+      const method = editingProductId ? 'PATCH' : 'POST';
+      await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: productName, category_name: productCategory, image: productImage })
       });
-      alert(`Producto "${productName}" añadido.`);
+      alert(editingProductId ? `Producto "${productName}" actualizado.` : `Producto "${productName}" añadido.`);
       setProductName('');
+      setProductCategory('');
       setProductImage('');
+      setEditingProductId(null);
       fetchData();
     }
+  };
+
+  const handleDeleteProduct = async (id) => {
+    Alert.alert("Eliminar", "¿Seguro que quieres eliminar este producto?", [
+      { text: "No" },
+      { text: "Sí", onPress: async () => {
+        await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
+        fetchData();
+      }}
+    ]);
+  };
+
+  const handleEditProduct = (prod) => {
+    setProductName(prod.name);
+    setProductCategory(prod.category_name);
+    setProductImage(prod.image);
+    setEditingProductId(prod.id);
   };
 
   const pickImage = async () => {
@@ -177,7 +226,7 @@ export default function AdminScreen() {
         {/* Email Settings Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <MaterialCommunityIcons name="email-cog" size={24} color="#10B981" />
+            <MaterialCommunityIcons name="email-edit-outline" size={24} color="#10B981" />
             <Text style={styles.cardTitle}>Configuración de Correo</Text>
           </View>
           
@@ -190,12 +239,12 @@ export default function AdminScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Gmail:</Text>
+            <Text style={styles.inputLabel}>Gmail Destino:</Text>
             <TextInput
               style={styles.input}
               placeholder="tu-correo@gmail.com"
-              value={adminEmail}
-              onChangeText={setAdminEmail}
+              value={targetEmail}
+              onChangeText={setTargetEmail}
             />
           </View>
 
@@ -204,8 +253,8 @@ export default function AdminScreen() {
             <TextInput
               style={styles.input}
               placeholder="xxxx xxxx xxxx xxxx"
-              value={adminPassword}
-              onChangeText={setAdminPassword}
+              value={smtpPassword}
+              onChangeText={setSmtpPassword}
               secureTextEntry
             />
           </View>
@@ -224,7 +273,7 @@ export default function AdminScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <MaterialCommunityIcons name="tag-multiple" size={24} color="#F59E0B" />
-            <Text style={styles.cardTitle}>Gestión de Categorías</Text>
+            <Text style={styles.cardTitle}>{editingCategoryId ? 'Editar Categoría' : 'Gestión de Categorías'}</Text>
           </View>
           <Text style={styles.description}>
             Añade nuevas categorías al catálogo.
@@ -237,14 +286,34 @@ export default function AdminScreen() {
               onChangeText={setNewCategory}
             />
           </View>
-          <TouchableOpacity style={[styles.button, { backgroundColor: '#F59E0B' }]} onPress={handleAddCategory}>
-            <Text style={styles.buttonText}>Añadir Categoría</Text>
-          </TouchableOpacity>
           
-          <View style={styles.pillContainer}>
-            {categories.map((cat, index) => (
-              <View key={index} style={styles.pill}>
-                <Text style={styles.pillText}>{cat}</Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity style={[styles.button, { backgroundColor: '#F59E0B', flex: 1 }]} onPress={handleAddCategory}>
+              <Text style={styles.buttonText}>{editingCategoryId ? 'Actualizar' : 'Añadir Categoría'}</Text>
+            </TouchableOpacity>
+            {editingCategoryId && (
+              <TouchableOpacity 
+                style={[styles.button, { backgroundColor: '#6B7280', paddingHorizontal: 15 }]} 
+                onPress={() => { setEditingCategoryId(null); setNewCategory(''); }}
+              >
+                <Text style={styles.buttonText}>X</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 15 }}>
+            <Text style={{ fontWeight: 'bold', marginBottom: 10, color: '#4B5563' }}>Categorías Existentes:</Text>
+            {categories.map((cat) => (
+              <View key={cat.id} style={styles.itemRow}>
+                <Text style={styles.itemName}>{cat.name}</Text>
+                <View style={{ flexDirection: 'row', gap: 5 }}>
+                  <TouchableOpacity onPress={() => handleEditCategory(cat)} style={styles.actionBtn}>
+                    <MaterialCommunityIcons name="pencil" size={18} color="#F59E0B" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDeleteCategory(cat.id)} style={styles.actionBtn}>
+                    <MaterialCommunityIcons name="trash-can" size={18} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </View>
@@ -254,7 +323,7 @@ export default function AdminScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <MaterialCommunityIcons name="package-variant-closed" size={24} color="#8B5CF6" />
-            <Text style={styles.cardTitle}>Gestión de Productos</Text>
+            <Text style={styles.cardTitle}>{editingProductId ? 'Editar Producto' : 'Gestión de Productos'}</Text>
           </View>
           <Text style={styles.description}>
             Crea nuevos productos dentro de las categorías existentes.
@@ -290,9 +359,44 @@ export default function AdminScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.button, { backgroundColor: '#8B5CF6' }]} onPress={handleAddProduct}>
-            <Text style={styles.buttonText}>Añadir Producto</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity style={[styles.button, { backgroundColor: '#8B5CF6', flex: 1 }]} onPress={handleAddProduct}>
+              <Text style={styles.buttonText}>{editingProductId ? 'Actualizar' : 'Añadir Producto'}</Text>
+            </TouchableOpacity>
+            {editingProductId && (
+              <TouchableOpacity 
+                style={[styles.button, { backgroundColor: '#6B7280', paddingHorizontal: 15 }]} 
+                onPress={() => { 
+                  setEditingProductId(null); 
+                  setProductName(''); 
+                  setProductCategory(''); 
+                  setProductImage(''); 
+                }}
+              >
+                <Text style={styles.buttonText}>X</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 15 }}>
+            <Text style={{ fontWeight: 'bold', marginBottom: 10, color: '#4B5563' }}>Listado de Productos:</Text>
+            {products.map((prod) => (
+              <View key={prod.id} style={styles.itemRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.itemName}>{prod.name}</Text>
+                  <Text style={styles.itemCategory}>{prod.category_name}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 5 }}>
+                  <TouchableOpacity onPress={() => handleEditProduct(prod)} style={styles.actionBtn}>
+                    <MaterialCommunityIcons name="pencil" size={18} color="#8B5CF6" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDeleteProduct(prod.id)} style={styles.actionBtn}>
+                    <MaterialCommunityIcons name="trash-can" size={18} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* User Management Section */}
@@ -344,9 +448,6 @@ export default function AdminScreen() {
                   <Text style={styles.userRole}>{user.role}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 5 }}>
-                  <TouchableOpacity onPress={() => {/* logic pending */}} style={styles.actionBtn}>
-                    <MaterialCommunityIcons name="pencil" size={18} color="#3B82F6" />
-                  </TouchableOpacity>
                   {user.role !== 'Admin' && (
                     <TouchableOpacity onPress={() => handleDeleteUser(user.id)} style={styles.actionBtn}>
                       <MaterialCommunityIcons name="trash-can" size={18} color="#EF4444" />
@@ -377,22 +478,22 @@ export default function AdminScreen() {
             </View>
             <FlatList
               data={categories}
-              keyExtractor={(item) => item}
+              keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => (
                 <TouchableOpacity 
                   style={styles.pickerItem} 
                   onPress={() => {
-                    setProductCategory(item);
+                    setProductCategory(item.name);
                     setPickerVisible(false);
                   }}
                 >
                   <Text style={[
                     styles.pickerItemText,
-                    productCategory === item && { color: '#10B981', fontWeight: 'bold' }
+                    productCategory === item.name && { color: '#10B981', fontWeight: 'bold' }
                   ]}>
-                    {item}
+                    {item.name}
                   </Text>
-                  {productCategory === item && (
+                  {productCategory === item.name && (
                     <MaterialCommunityIcons name="check" size={20} color="#10B981" />
                   )}
                 </TouchableOpacity>
@@ -495,23 +596,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1F2937',
   },
-  pillContainer: {
+  itemRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 15,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  pill: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
+  itemName: {
+    fontSize: 14,
+    color: '#1F2937',
+    fontWeight: '500',
+    flex: 1,
   },
-  pillText: {
-    color: '#D97706',
-    fontWeight: '600',
+  itemCategory: {
     fontSize: 12,
+    color: '#6B7280',
   },
   userRow: {
     flexDirection: 'row',
