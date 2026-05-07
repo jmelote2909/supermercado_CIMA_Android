@@ -1,50 +1,57 @@
-# Welcome to your Expo app 👋
+# Supermercado CIMA (Android) 🛒
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Esta es la aplicación móvil oficial del **Supermercado CIMA**, desarrollada con [Expo](https://expo.dev) y [React Native](https://reactnative.dev/). La aplicación permite a los usuarios navegar por el catálogo de productos, realizar pedidos y gestionar sus compras de manera eficiente.
 
-## Get started
+## 🚀 Tecnologías Utilizadas
 
-1. Install dependencies
+- **Core:** [React Native](https://reactnative.dev/) & [Expo](https://expo.dev/)
+- **Navegación:** [Expo Router](https://docs.expo.dev/router/introduction) (Basada en archivos)
+- **Backend/Base de Datos:** [Firebase](https://firebase.google.com/)
+- **Notificaciones por Correo:** [EmailJS](https://www.emailjs.com/)
+- **Estilos:** Expo Linear Gradient & Vector Icons
+- **Estado y Efectos:** React Hooks (useState, useEffect)
 
+## 🛠️ Instalación y Configuración
+
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/jmelote2909/supermercado_CIMA_Android.git
+   cd supermercado_CIMA_Android
+   ```
+
+2. **Instalar dependencias:**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. **Iniciar la aplicación:**
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+Desde la terminal de Expo, puedes presionar `a` para abrir en un emulador de Android o escanear el código QR con la app **Expo Go** en tu dispositivo físico.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📱 Características Principales
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Tienda Virtual:** Catálogo interactivo de productos con búsqueda y filtros.
+- **Gestión de Pedidos:** Visualización y seguimiento de órdenes realizadas.
+- **Panel de Administración:** Gestión de inventario, pedidos y configuraciones del sistema (accesible vía `admin.tsx`).
+- **Notificaciones:** Integración con EmailJS para alertas de nuevos pedidos.
+- **Carga de Imágenes:** Soporte para subir fotos de productos mediante `expo-image-picker`.
 
-## Get a fresh project
+## 📂 Estructura del Proyecto
 
-When you're ready, run:
+- `app/`: Contiene las rutas y pantallas principales de la aplicación (usando Expo Router).
+  - `(tabs)/`: Navegación principal por pestañas (Tienda, Pedidos).
+  - `admin.tsx`: Panel administrativo.
+- `components/`: Componentes de UI reutilizables.
+- `constants/`: Valores constantes como colores, estilos y configuraciones.
+- `hooks/`: Custom hooks para lógica compartida.
+- `assets/`: Imágenes, fuentes y otros recursos estáticos.
 
-```bash
-npm run reset-project
-```
+## 📄 Licencia
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Este proyecto es privado y propiedad de Supermercado CIMA.
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+Desarrollado con ❤️ por el equipo de Supermercado CIMA.
