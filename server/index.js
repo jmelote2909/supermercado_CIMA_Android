@@ -165,6 +165,22 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
+app.patch('/api/users/:id', async (req, res) => {
+  const { username, password, role } = req.body;
+  const { id } = req.params;
+  try {
+    if (password) {
+      const hashedPass = await bcrypt.hash(password, 10);
+      await db.run('UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?', [username, hashedPass, role || 'User', id]);
+    } else {
+      await db.run('UPDATE users SET username = ?, role = ? WHERE id = ?', [username, role || 'User', id]);
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(400).json({ success: false, message: 'Error al actualizar usuario' });
+  }
+});
+
 app.delete('/api/users/:id', async (req, res) => {
   await db.run('DELETE FROM users WHERE id = ?', [req.params.id]);
   res.json({ success: true });

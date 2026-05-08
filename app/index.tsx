@@ -25,7 +25,7 @@ export default function LoginScreen() {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username: username.trim(), password: password.trim() })
       });
       
       const data = await response.json();
@@ -94,7 +94,11 @@ export default function LoginScreen() {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Text style={styles.buttonText}>Entrar</Text>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.buttonText}>Entrar</Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 

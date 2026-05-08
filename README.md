@@ -4,52 +4,80 @@ Esta es la aplicación móvil oficial del **Supermercado CIMA**, desarrollada co
 
 ## 🚀 Tecnologías Utilizadas
 
-- **Core:** [React Native](https://reactnative.dev/) & [Expo](https://expo.dev/)
-- **Navegación:** [Expo Router](https://docs.expo.dev/router/introduction) (Basada en archivos)
-- **Backend/Base de Datos:** [Firebase](https://firebase.google.com/)
-- **Estilos:** Expo Linear Gradient & Vector Icons
-- **Estado y Efectos:** React Hooks (useState, useEffect)
+- **App:** [React Native](https://reactnative.dev/) & [Expo](https://expo.dev/)
+- **Backend:** Node.js + Express
+- **Base de Datos:** SQLite
+- **Navegación:** [Expo Router](https://docs.expo.dev/router/introduction)
+- **Actualizaciones:** Expo OTA Updates
 
-## 🛠️ Instalación y Configuración
+---
 
-1. **Clonar el repositorio:**
+## 🛠️ GUÍA DE DESPLIEGUE (RED LOCAL)
+
+Esta configuración permite que las tablets de la empresa se conecten a un ordenador central que sirve como base de datos.
+
+### 1. Preparar el Ordenador Central (Servidor)
+
+1. **Instalar Node.js:** Descarga la versión LTS en [nodejs.org](https://nodejs.org/).
+2. **Fijar IP Estática (Crucial):**
+   - Ve a Propiedades de tu conexión Wi-Fi/Ethernet > IPv4.
+   - Asigna una IP fija (ej: `192.168.1.100`) para que la app no pierda la conexión al reiniciar el router.
+3. **Configurar Firewall:**
+   - Abre el puerto **3000 (TCP)** en las "Reglas de Entrada" del Firewall de Windows para permitir que las tablets conecten.
+
+### 2. Poner en marcha el Servidor
+
+1. Entra en la carpeta `server/`.
+2. Ejecuta `npm install`.
+3. Inicia el servidor con persistencia:
    ```bash
-   git clone https://github.com/jmelote2909/supermercado_CIMA_Android.git
-   cd supermercado_CIMA_Android
+   npm install -g pm2
+   pm2 start index.js --name "cima-server"
+   pm2 save
    ```
 
-2. **Instalar dependencias:**
-   ```bash
-   npm install
+### 3. Conectar la App al Servidor
+
+1. Edita el archivo `constants/API.ts`.
+2. Cambia la IP por la del servidor:
+   ```typescript
+   export const API_URL = 'http://192.168.1.100:3000/api';
    ```
 
-3. **Iniciar la aplicación:**
-   ```bash
-   npx expo start
-   ```
+### 4. Generar el APK e Instalar
 
-Desde la terminal de Expo, puedes presionar `a` para abrir en un emulador de Android o escanear el código QR con la app **Expo Go** en tu dispositivo físico.
+1. Instala EAS CLI: `npm install -g eas-cli`.
+2. Inicia sesión: `eas login`.
+3. Genera el instalador:
+   ```bash
+   npx eas build -p android --profile preview
+   ```
+4. Descarga el archivo `.apk` e instálalo en todas las tablets.
+
+---
+
+## 🔄 ACTUALIZACIONES AUTOMÁTICAS (OTA)
+
+Para enviar cambios a las tablets sin reinstalar el APK:
+
+1. Ejecuta `eas update --branch production --message "Mejoras en UI"`.
+2. Las tablets descargarán los cambios automáticamente al abrir la app (requiere internet momentáneo).
+
+> [!WARNING]
+> Los cambios en iconos, nombre de la app o nuevos permisos requieren generar un nuevo APK.
+
+---
 
 ## 📱 Características Principales
 
 - **Tienda Virtual:** Catálogo interactivo de productos con búsqueda y filtros.
 - **Gestión de Pedidos:** Visualización y seguimiento de órdenes realizadas.
-- **Panel de Administración:** Gestión de inventario, pedidos y configuraciones del sistema (accesible vía `admin.tsx`).
-- **Carga de Imágenes:** Soporte para subir fotos de productos mediante `expo-image-picker`.
+- **Panel de Administración:** Gestión de inventario, usuarios y configuración de correo (Gmail SMTP).
+- **Carga de Imágenes:** Soporte para subir fotos de productos (Base64).
 
 ## 📂 Estructura del Proyecto
 
-- `app/`: Contiene las rutas y pantallas principales de la aplicación (usando Expo Router).
-  - `(tabs)/`: Navegación principal por pestañas (Tienda, Pedidos).
-  - `admin.tsx`: Panel administrativo.
-- `components/`: Componentes de UI reutilizables.
-- `constants/`: Valores constantes como colores, estilos y configuraciones.
-- `hooks/`: Custom hooks para lógica compartida.
-- `assets/`: Imágenes, fuentes y otros recursos estáticos.
-
-## 📄 Licencia
-
-Este proyecto es privado y propiedad de Supermercado CIMA.
-
----
-Desarrollado con ❤️ por el equipo de Supermercado CIMA.
+- `app/`: Rutas y pantallas (Expo Router).
+- `server/`: Backend Node.js + base de datos SQLite.
+- `components/`: Componentes UI reutilizables.
+- `constants/`: Configuración global e IP del servidor.

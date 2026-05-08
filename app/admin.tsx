@@ -95,20 +95,29 @@ export default function AdminScreen() {
   };
 
   const handleAddUser = async () => {
-    if (newUserUsername && (newUserPassword || editingUserId)) {
+    const username = newUserUsername.trim();
+    const password = newUserPassword.trim();
+
+    if (username && (password || editingUserId)) {
       try {
         if (editingUserId) {
-          // Lógica de edición
-          alert('Funcionalidad de edición pendiente en el server');
+          const res = await fetch(`${API_URL}/users/${editingUserId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error(data.message);
+          alert(`Usuario ${username} actualizado.`);
         } else {
           const res = await fetch(`${API_URL}/users`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: newUserUsername, password: newUserPassword })
+            body: JSON.stringify({ username, password })
           });
           const data = await res.json();
           if (!data.success) throw new Error(data.message);
-          alert(`Usuario ${newUserUsername} creado.`);
+          alert(`Usuario ${username} creado.`);
         }
         setNewUserUsername('');
         setNewUserPassword('');
@@ -116,6 +125,12 @@ export default function AdminScreen() {
         fetchData();
       } catch (e) { alert(e.message); }
     }
+  };
+
+  const handleEditUser = (user) => {
+    setNewUserUsername(user.username);
+    setNewUserPassword(''); // Dejar vacío para no cambiarla a menos que se escriba algo
+    setEditingUserId(user.id);
   };
 
   const handleDeleteUser = async (id) => {
@@ -448,6 +463,9 @@ export default function AdminScreen() {
                   <Text style={styles.userRole}>{user.role}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 5 }}>
+                  <TouchableOpacity onPress={() => handleEditUser(user)} style={styles.actionBtn}>
+                    <MaterialCommunityIcons name="pencil" size={18} color="#3B82F6" />
+                  </TouchableOpacity>
                   {user.role !== 'Admin' && (
                     <TouchableOpacity onPress={() => handleDeleteUser(user.id)} style={styles.actionBtn}>
                       <MaterialCommunityIcons name="trash-can" size={18} color="#EF4444" />

@@ -43,6 +43,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "updates": {
+      "url": "https://u.expo.dev/YOUR_PROJECT_ID_HERE"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
