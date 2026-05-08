@@ -13,6 +13,8 @@ export default function AdminScreen() {
   const [newUserPassword, setNewUserPassword] = useState('');
   const [editingUserId, setEditingUserId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [adminUsername, setAdminUsername] = useState('admin');
+  const [adminPassword, setAdminPassword] = useState('');
 
   // Estados reales vinculados a la DB
   const [users, setUsers] = useState([]);
@@ -33,21 +35,23 @@ export default function AdminScreen() {
 
   const fetchData = async () => {
     try {
-      const [uRes, cRes, passRes, targetRes, prRes] = await Promise.all([
-        fetch(`${API_URL}/users`),
-        fetch(`${API_URL}/categories`),
-        fetch(`${API_URL}/config/smtp_pass`),
-        fetch(`${API_URL}/config/target_email`),
-        fetch(`${API_URL}/products`)
+      const [uRes, cRes, passRes, targetRes, prRes, adminUserRes] = await Promise.all([
+        fetch(`${API_URL}/users`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
+        fetch(`${API_URL}/categories`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
+        fetch(`${API_URL}/config/smtp_pass`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
+        fetch(`${API_URL}/config/target_email`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
+        fetch(`${API_URL}/products`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
+        fetch(`${API_URL}/config/admin_user`, { headers: { 'bypass-tunnel-reminder': 'true' } })
       ]);
-      const [uData, cData, passData, targetData, prData] = await Promise.all([
-        uRes.json(), cRes.json(), passRes.json(), targetRes.json(), prRes.json()
+      const [uData, cData, passData, targetData, prData, adminUserData] = await Promise.all([
+        uRes.json(), cRes.json(), passRes.json(), targetRes.json(), prRes.json(), adminUserRes.json()
       ]);
       setUsers(uData);
       setCategories(cData);
       setProducts(prData);
       setSmtpPassword(passData.smtp_pass);
       setTargetEmail(targetData.target_email);
+      setAdminUsername(adminUserData.admin_user);
     } catch (e) {
       alert('Error conectando con el servidor');
     } finally {
@@ -60,7 +64,8 @@ export default function AdminScreen() {
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/config/test_email`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'bypass-tunnel-reminder': 'true' }
       });
       const data = await res.json();
       if (data.success) {
@@ -80,18 +85,43 @@ export default function AdminScreen() {
       await Promise.all([
         fetch(`${API_URL}/config`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'bypass-tunnel-reminder': 'true'
+          },
           body: JSON.stringify({ key: 'smtp_pass', value: smtpPassword })
         }),
         fetch(`${API_URL}/config`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'bypass-tunnel-reminder': 'true'
+          },
           body: JSON.stringify({ key: 'target_email', value: targetEmail })
         })
       ]);
       alert('Configuración guardada correctamente');
       fetchData();
     } catch (e) { alert('Error al guardar'); }
+  };
+
+  const handleUpdateAdminCredentials = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/update_credentials`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'bypass-tunnel-reminder': 'true'
+        },
+        body: JSON.stringify({ username: adminUsername, password: adminPassword })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Credenciales de administrador actualizadas');
+        setAdminPassword('');
+        fetchData();
+      }
+    } catch (e) { alert('Error al actualizar credenciales'); }
   };
 
   const handleAddUser = async () => {
@@ -103,7 +133,10 @@ export default function AdminScreen() {
         if (editingUserId) {
           const res = await fetch(`${API_URL}/users/${editingUserId}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'bypass-tunnel-reminder': 'true'
+            },
             body: JSON.stringify({ username, password })
           });
           const data = await res.json();
@@ -112,7 +145,10 @@ export default function AdminScreen() {
         } else {
           const res = await fetch(`${API_URL}/users`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'bypass-tunnel-reminder': 'true'
+            },
             body: JSON.stringify({ username, password })
           });
           const data = await res.json();
@@ -137,7 +173,10 @@ export default function AdminScreen() {
     Alert.alert("Eliminar", "¿Seguro?", [
       { text: "No" },
       { text: "Sí", onPress: async () => {
-        await fetch(`${API_URL}/users/${id}`, { method: 'DELETE' });
+        await fetch(`${API_URL}/users/${id}`, { 
+          method: 'DELETE',
+          headers: { 'bypass-tunnel-reminder': 'true' }
+        });
         fetchData();
       }}
     ]);
@@ -150,7 +189,10 @@ export default function AdminScreen() {
         const method = editingCategoryId ? 'PATCH' : 'POST';
         const res = await fetch(url, {
           method,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'bypass-tunnel-reminder': 'true'
+          },
           body: JSON.stringify({ name: newCategory })
         });
         const data = await res.json();
@@ -166,7 +208,10 @@ export default function AdminScreen() {
     Alert.alert("Eliminar", "¿Seguro que quieres eliminar esta categoría? Esto podría afectar a los productos asociados.", [
       { text: "No" },
       { text: "Sí", onPress: async () => {
-        await fetch(`${API_URL}/categories/${id}`, { method: 'DELETE' });
+        await fetch(`${API_URL}/categories/${id}`, { 
+          method: 'DELETE',
+          headers: { 'bypass-tunnel-reminder': 'true' }
+        });
         fetchData();
       }}
     ]);
@@ -183,7 +228,10 @@ export default function AdminScreen() {
       const method = editingProductId ? 'PATCH' : 'POST';
       await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'bypass-tunnel-reminder': 'true'
+        },
         body: JSON.stringify({ name: productName, category_name: productCategory, image: productImage })
       });
       alert(editingProductId ? `Producto "${productName}" actualizado.` : `Producto "${productName}" añadido.`);
@@ -199,7 +247,10 @@ export default function AdminScreen() {
     Alert.alert("Eliminar", "¿Seguro que quieres eliminar este producto?", [
       { text: "No" },
       { text: "Sí", onPress: async () => {
-        await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
+        await fetch(`${API_URL}/products/${id}`, { 
+          method: 'DELETE',
+          headers: { 'bypass-tunnel-reminder': 'true' }
+        });
         fetchData();
       }}
     ]);
@@ -282,6 +333,41 @@ export default function AdminScreen() {
               <Text style={styles.buttonText}>Probar Email</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Admin Credentials Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <MaterialCommunityIcons name="shield-lock-outline" size={24} color="#EF4444" />
+            <Text style={styles.cardTitle}>Acceso Panel Admin</Text>
+          </View>
+          <Text style={styles.description}>
+            Cambia el nombre de usuario y contraseña para entrar a este panel.
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Usuario Admin:</Text>
+            <TextInput
+              style={styles.input}
+              value={adminUsername}
+              onChangeText={setAdminUsername}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Nueva Contraseña:</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Dejar en blanco para no cambiar"
+              value={adminPassword}
+              onChangeText={setAdminPassword}
+              secureTextEntry
+            />
+          </View>
+
+          <TouchableOpacity style={[styles.button, { backgroundColor: '#EF4444' }]} onPress={handleUpdateAdminCredentials}>
+            <Text style={styles.buttonText}>Actualizar Acceso Admin</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Categories Section */}

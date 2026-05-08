@@ -24,7 +24,10 @@ export default function LoginScreen() {
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'bypass-tunnel-reminder': 'true'
+        },
         body: JSON.stringify({ username: username.trim(), password: password.trim() })
       });
       

@@ -23,8 +23,11 @@ export default function AdminLoginScreen() {
     try {
       const res = await fetch(`${API_URL}/admin/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password })
+        headers: { 
+          'Content-Type': 'application/json',
+          'bypass-tunnel-reminder': 'true'
+        },
+        body: JSON.stringify({ username: email.trim(), password: password.trim() })
       });
       
       const data = await res.json();

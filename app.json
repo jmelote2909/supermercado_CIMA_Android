@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -19,7 +20,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.jesusmo29.supermercado_CIMA_Android"
     },
     "web": {
       "output": "static",
@@ -45,10 +47,16 @@
       "reactCompiler": true
     },
     "updates": {
-      "url": "https://u.expo.dev/YOUR_PROJECT_ID_HERE"
+      "url": "https://u.expo.dev/fbe9d25a-7b84-4071-9f82-c23d58ac9e60"
     },
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fbe9d25a-7b84-4071-9f82-c23d58ac9e60"
+      }
     }
   }
 }

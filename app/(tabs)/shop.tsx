@@ -29,8 +29,8 @@ export default function ShopScreen() {
   const fetchData = async () => {
     try {
       const [pRes, cRes] = await Promise.all([
-        fetch(`${API_URL}/products`),
-        fetch(`${API_URL}/categories`)
+        fetch(`${API_URL}/products`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
+        fetch(`${API_URL}/categories`, { headers: { 'bypass-tunnel-reminder': 'true' } })
       ]);
       const [pData, cData] = await Promise.all([pRes.json(), cRes.json()]);
       setProducts(pData);
@@ -58,7 +58,10 @@ export default function ShopScreen() {
     try {
       await fetch(`${API_URL}/orders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'bypass-tunnel-reminder': 'true'
+        },
         body: JSON.stringify({
           username: currentUser || 'Usuario', 
           items: cart,

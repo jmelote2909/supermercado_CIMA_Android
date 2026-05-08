@@ -13,7 +13,9 @@ export default function OrdersScreen() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch(`${API_URL}/orders`);
+      const res = await fetch(`${API_URL}/orders`, {
+        headers: { 'bypass-tunnel-reminder': 'true' }
+      });
       const data = await res.json();
       setOrders(data);
     } catch (e) {
@@ -28,7 +30,10 @@ export default function OrdersScreen() {
     try {
       await fetch(`${API_URL}/orders/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'bypass-tunnel-reminder': 'true'
+        },
         body: JSON.stringify({ status: newStatus })
       });
       fetchOrders();

@@ -61,7 +61,7 @@ let db;
   // Initial Data
   const adminUserExists = await db.get('SELECT * FROM users WHERE username = ?', ['admin']);
   if (!adminUserExists) {
-    const hashedPass = await bcrypt.hash('admin123', 10);
+    const hashedPass = await bcrypt.hash('1234', 10);
     await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', hashedPass, 'Admin']);
   }
 
@@ -302,6 +302,23 @@ app.post('/api/config/test_email', async (req, res) => {
   } catch (error) {
     console.error('Error en test de email:', error);
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// --- Actualizar Credenciales Admin ---
+app.post('/api/admin/update_credentials', async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    if (username) {
+      await db.run('UPDATE config SET value = ? WHERE key = "admin_user"', [username.trim()]);
+    }
+    if (password) {
+      const hashedPass = await bcrypt.hash(password.trim(), 10);
+      await db.run('UPDATE config SET value = ? WHERE key = "admin_pass"', [hashedPass]);
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, message: 'Error al actualizar credenciales' });
   }
 });
 
