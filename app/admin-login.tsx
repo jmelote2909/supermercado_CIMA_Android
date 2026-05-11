@@ -20,6 +20,9 @@ export default function AdminLoginScreen() {
     if (!email || !password) return;
     
     setLoading(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos de timeout
+
     try {
       const res = await fetch(`${API_URL}/admin/login`, {
         method: 'POST',
@@ -27,18 +30,24 @@ export default function AdminLoginScreen() {
           'Content-Type': 'application/json',
           'bypass-tunnel-reminder': 'true'
         },
-        body: JSON.stringify({ username: email.trim(), password: password.trim() })
+        body: JSON.stringify({ username: email.trim(), password: password.trim() }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
       const data = await res.json();
       
       if (data.success) {
         router.replace('/admin');
       } else {
-        alert('Credenciales de administrador incorrectas');
+        alert(data.message || 'Credenciales de administrador incorrectas');
       }
     } catch (error) {
-      alert('Error al conectar con el servidor');
+      if (error.name === 'AbortError') {
+        alert('Tiempo de espera agotado. El servidor no responde.');
+      } else {
+        alert('Error al conectar con el servidor. Verifica tu conexión.');
+      }
     } finally {
       setLoading(false);
     }

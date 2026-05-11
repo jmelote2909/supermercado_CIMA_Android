@@ -278,6 +278,15 @@ export default function AdminScreen() {
     }
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#111827" />
+        <Text style={{ marginTop: 10, color: '#6B7280' }}>Cargando panel...</Text>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>

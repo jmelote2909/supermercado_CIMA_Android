@@ -15,67 +15,7 @@ const dbPath = path.resolve(__dirname, 'database.sqlite');
 
 let db;
 
-(async () => {
-  // Open database
-  db = await open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
-
-  // Create tables
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE,
-      password TEXT,
-      role TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS categories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE
-    );
-
-    CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      category_name TEXT,
-      image TEXT,
-      FOREIGN KEY(category_name) REFERENCES categories(name)
-    );
-
-    CREATE TABLE IF NOT EXISTS orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT,
-      items TEXT,
-      status TEXT,
-      date TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS config (
-      key TEXT PRIMARY KEY,
-      value TEXT
-    );
-  `);
-
-  // Initial Data
-  const adminUserExists = await db.get('SELECT * FROM users WHERE username = ?', ['admin']);
-  if (!adminUserExists) {
-    const hashedPass = await bcrypt.hash('1234', 10);
-    await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', hashedPass, 'Admin']);
-  }
-
-  const adminConfigExists = await db.get('SELECT key FROM config WHERE key = "admin_user"');
-  if (!adminConfigExists) {
-    const hashedPass = await bcrypt.hash('1234', 10);
-    await db.run("INSERT INTO config (key, value) VALUES ('admin_user', 'admin')");
-    await db.run("INSERT INTO config (key, value) VALUES ('admin_pass', ?)", [hashedPass]);
-    await db.run("INSERT INTO config (key, value) VALUES ('target_email', 'tu-email@gmail.com')");
-    await db.run("INSERT INTO config (key, value) VALUES ('smtp_pass', '')");
-  }
-
-  console.log('Database initialized');
-})();
+// Moved initialization inside (async () => { ... }) at the end of the file
 
 
 // Función para obtener el transporter con los datos actuales de la DB
@@ -137,15 +77,29 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-app.post('/api/admin/login', async (req, res) => {
-  const { username, password } = req.body;
-  const adminUser = await db.get('SELECT value FROM config WHERE key = "admin_user"');
-  const adminPass = await db.get('SELECT value FROM config WHERE key = "admin_pass"');
+app.post('/api/admin/login', async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
+    console.log(`[Admin Login Attempt] User: ${username}`);
 
-  if (adminUser && adminPass && username === adminUser.value && await bcrypt.compare(password, adminPass.value)) {
-    res.json({ success: true });
-  } else {
-    res.status(401).json({ success: false, message: 'Acceso denegado' });
+    if (!db) {
+      console.error('[Admin Login] Database not initialized');
+      return res.status(503).json({ success: false, message: 'Servidor iniciando, reintente en unos segundos' });
+    }
+
+    const adminUser = await db.get('SELECT value FROM config WHERE key = "admin_user"');
+    const adminPass = await db.get('SELECT value FROM config WHERE key = "admin_pass"');
+
+    if (adminUser && adminPass && username === adminUser.value && await bcrypt.compare(password, adminPass.value)) {
+      console.log('[Admin Login] Success');
+      res.json({ success: true });
+    } else {
+      console.warn(`[Admin Login] Failed attempt for user: ${username}`);
+      res.status(401).json({ success: false, message: 'Acceso denegado' });
+    }
+  } catch (error) {
+    console.error('[Admin Login] Error:', error);
+    next(error);
   }
 });
 
@@ -322,7 +276,86 @@ app.post('/api/admin/update_credentials', async (req, res) => {
   }
 });
 
-const PORT = 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// Middleware de manejo de errores global
+app.use((err, req, res, next) => {
+  console.error('Unhandled Error:', err);
+  res.status(500).json({ 
+    success: false, 
+    message: 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
+
+const PORT = 3000;
+(async () => {
+  try {
+    // Open database
+    db = await open({
+      filename: dbPath,
+      driver: sqlite3.Database
+    });
+
+    // Create tables (ensure this runs before any request)
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT,
+        role TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE
+      );
+
+      CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        category_name TEXT,
+        image TEXT,
+        FOREIGN KEY(category_name) REFERENCES categories(name)
+      );
+
+      CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        items TEXT,
+        status TEXT,
+        date TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS config (
+        key TEXT PRIMARY KEY,
+        value TEXT
+      );
+    `);
+
+    // Initial Data
+    const adminUserExists = await db.get('SELECT * FROM users WHERE username = ?', ['admin']);
+    if (!adminUserExists) {
+      const hashedPass = await bcrypt.hash('1234', 10);
+      await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', hashedPass, 'Admin']);
+    }
+
+    const adminConfigExists = await db.get('SELECT key FROM config WHERE key = "admin_user"');
+    if (!adminConfigExists) {
+      const hashedPass = await bcrypt.hash('1234', 10);
+      await db.run("INSERT INTO config (key, value) VALUES ('admin_user', 'admin')");
+      await db.run("INSERT INTO config (key, value) VALUES ('admin_pass', ?)", [hashedPass]);
+      await db.run("INSERT INTO config (key, value) VALUES ('target_email', 'tu-email@gmail.com')");
+      await db.run("INSERT INTO config (key, value) VALUES ('smtp_pass', '')");
+    }
+
+    console.log('Database initialized');
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Servidor iniciado con éxito.`);
+      console.log(`Acceso local: http://localhost:${PORT}`);
+      console.log(`Acceso red: http://10.198.37.158:${PORT} (Verifica tu IP con ipconfig)`);
+    });
+  } catch (error) {
+    console.error('Critical Error during initialization:', error);
+    process.exit(1);
+  }
+})();
