@@ -59,6 +59,30 @@ const db = {
   }
 };
 
+// --- Caché en memoria ---
+// Evita hacer consultas lentas a la BD en cada petición.
+// Los datos se refrescan automáticamente cuando se modifica algo.
+const CACHE_TTL = 60000; // 60 segundos
+const cache = new Map();
+
+function getCache(key) {
+  const entry = cache.get(key);
+  if (entry && Date.now() - entry.time < CACHE_TTL) {
+    return entry.data;
+  }
+  cache.delete(key);
+  return null;
+}
+
+function setCache(key, data) {
+  cache.set(key, { data, time: Date.now() });
+}
+
+function invalidateCache(...keys) {
+  keys.forEach(k => cache.delete(k));
+  console.log(`[Cache] Invalidated: ${keys.join(', ')}`);
+}
+
 // Función para obtener el transporter con los datos actuales de la DB
 async function sendOrderEmail(targetEmail, order) {
   const smtpPass = await db.get('SELECT value FROM config WHERE key = $1', ['smtp_pass']);
@@ -140,7 +164,10 @@ app.post('/api/admin/login', async (req, res, next) => {
 });
 
 app.get('/api/users', async (req, res) => {
+  const cached = getCache('users');
+  if (cached) return res.json(cached);
   const users = await db.all('SELECT id, username, role FROM users');
+  setCache('users', users);
   res.json(users);
 });
 
@@ -149,6 +176,7 @@ app.post('/api/users', async (req, res) => {
   try {
     const hashedPass = await bcrypt.hash(password, 10);
     await db.run('INSERT INTO users (username, password, role) VALUES ($1, $2, $3)', [username, hashedPass, role || 'User']);
+    invalidateCache('users');
     res.json({ success: true });
   } catch (e) {
     console.error('Error creating user:', e);
@@ -166,6 +194,7 @@ app.patch('/api/users/:id', async (req, res) => {
     } else {
       await db.run('UPDATE users SET username = $1, role = $2 WHERE id = $3', [username, role || 'User', id]);
     }
+    invalidateCache('users');
     res.json({ success: true });
   } catch (e) {
     console.error('Error updating user:', e);
@@ -175,12 +204,16 @@ app.patch('/api/users/:id', async (req, res) => {
 
 app.delete('/api/users/:id', async (req, res) => {
   await db.run('DELETE FROM users WHERE id = $1', [req.params.id]);
+  invalidateCache('users');
   res.json({ success: true });
 });
 
 // --- Categories ---
 app.get('/api/categories', async (req, res) => {
+  const cached = getCache('categories');
+  if (cached) return res.json(cached);
   const categories = await db.all('SELECT * FROM categories');
+  setCache('categories', categories);
   res.json(categories);
 });
 
@@ -188,6 +221,7 @@ app.post('/api/categories', async (req, res) => {
   const { name } = req.body;
   try {
     await db.run('INSERT INTO categories (name) VALUES ($1)', [name]);
+    invalidateCache('categories');
     res.json({ success: true });
   } catch (e) {
     console.error('Error creating category:', e);
@@ -199,6 +233,7 @@ app.patch('/api/categories/:id', async (req, res) => {
   const { name } = req.body;
   try {
     await db.run('UPDATE categories SET name = $1 WHERE id = $2', [name, req.params.id]);
+    invalidateCache('categories', 'products');
     res.json({ success: true });
   } catch (e) {
     console.error('Error updating category:', e);
@@ -212,6 +247,7 @@ app.delete('/api/categories/:id', async (req, res) => {
     console.log(`[Delete Category] Attempting to delete ID: ${id}`);
     const result = await db.run('DELETE FROM categories WHERE id = $1', [id]);
     console.log(`[Delete Category] Success for ID: ${id}`);
+    invalidateCache('categories', 'products');
     res.json({ success: true });
   } catch (e) {
     console.error(`[Delete Category] Error for ID ${id}:`, e);
@@ -221,7 +257,10 @@ app.delete('/api/categories/:id', async (req, res) => {
 
 // --- Products ---
 app.get('/api/products', async (req, res) => {
+  const cached = getCache('products');
+  if (cached) return res.json(cached);
   const products = await db.all('SELECT * FROM products');
+  setCache('products', products);
   res.json(products);
 });
 
@@ -229,6 +268,7 @@ app.post('/api/products', async (req, res) => {
   const { name, category_name, image } = req.body;
   try {
     await db.run('INSERT INTO products (name, category_name, image) VALUES ($1, $2, $3)', [name, category_name, image]);
+    invalidateCache('products');
     res.json({ success: true });
   } catch (e) {
     console.error('Error creating product:', e);
@@ -240,6 +280,7 @@ app.patch('/api/products/:id', async (req, res) => {
   const { name, category_name, image } = req.body;
   try {
     await db.run('UPDATE products SET name = $1, category_name = $2, image = $3 WHERE id = $4', [name, category_name, image, req.params.id]);
+    invalidateCache('products');
     res.json({ success: true });
   } catch (e) {
     console.error('Error updating product:', e);
@@ -252,12 +293,10 @@ app.delete('/api/products/:id', async (req, res, next) => {
     const { id } = req.params;
     console.log(`[Delete Product] Attempting to delete ID: ${id}`);
     const result = await db.run('DELETE FROM products WHERE id = $1', [id]);
-    
     if (result.rowCount === 0) {
-      console.warn(`[Delete Product] Product with ID ${id} not found`);
       return res.status(404).json({ success: false, message: 'Producto no encontrado' });
     }
-
+    invalidateCache('products');
     console.log(`[Delete Product] Success for ID: ${id}`);
     res.json({ success: true });
   } catch (error) {
@@ -306,9 +345,12 @@ app.patch('/api/orders/:id', async (req, res) => {
 // --- Config ---
 app.get('/api/config-all', async (req, res) => {
   try {
+    const cached = getCache('config');
+    if (cached) return res.json(cached);
     const rows = await db.all('SELECT key, value FROM config');
     const config = {};
     rows.forEach(r => config[r.key] = r.value);
+    setCache('config', config);
     res.json(config);
   } catch (e) {
     console.error('Error fetching all config:', e);
@@ -325,6 +367,7 @@ app.post('/api/config', async (req, res, next) => {
   try {
     const { key, value } = req.body;
     await db.run('INSERT INTO config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', [key, value]);
+    invalidateCache('config');
     res.json({ success: true });
   } catch (error) {
     console.error('Error saving config:', error);
