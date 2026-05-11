@@ -394,6 +394,18 @@ const PORT = process.env.PORT || 3000;
     await pool.query('SELECT NOW()');
     console.log('PostgreSQL connected');
 
+    // Pre-calentar el pool: crear conexiones en paralelo para que la demora de
+    // DNS inverso ocurra una sola vez al arrancar, no en cada petición del usuario.
+    console.log('Pre-warming connection pool...');
+    await Promise.all([
+      pool.query('SELECT 1'),
+      pool.query('SELECT 1'),
+      pool.query('SELECT 1'),
+      pool.query('SELECT 1'),
+      pool.query('SELECT 1'),
+    ]);
+    console.log('Connection pool pre-warmed (5 connections ready)');
+
     // Create tables (PostgreSQL dialect)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
