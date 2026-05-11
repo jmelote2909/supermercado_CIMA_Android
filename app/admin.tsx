@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Modal, FlatList, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Modal, FlatList, Alert, ActivityIndicator, Image, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -205,24 +205,37 @@ export default function AdminScreen() {
   };
 
   const handleDeleteCategory = async (id) => {
-    Alert.alert("Eliminar", "¿Seguro que quieres eliminar esta categoría? Esto podría afectar a los productos asociados.", [
-      { text: "No" },
-      { text: "Sí", onPress: async () => {
-        try {
-          const res = await fetch(`${API_URL}/categories/${id}`, { 
-            method: 'DELETE',
-            headers: { 'bypass-tunnel-reminder': 'true' }
-          });
-          const data = await res.json();
-          if (!data.success) {
-            alert(`Error al borrar: ${data.message || 'Error desconocido'}`);
-          }
-          fetchData();
-        } catch (e) {
-          alert("Error de conexión al borrar la categoría");
+    console.log(`[Admin] Clicked delete category ID: ${id}`);
+    
+    const performDelete = async () => {
+      try {
+        console.log(`[Admin] Sending DELETE request for category ${id}`);
+        const res = await fetch(`${API_URL}/categories/${id}`, { 
+          method: 'DELETE',
+          headers: { 'bypass-tunnel-reminder': 'true' }
+        });
+        const data = await res.json();
+        console.log(`[Admin] Server response:`, data);
+        if (!data.success) {
+          alert(`Error al borrar: ${data.message || 'Error desconocido'}`);
         }
-      }}
-    ]);
+        fetchData();
+      } catch (e) {
+        console.error(`[Admin] Connection error:`, e);
+        alert("Error de conexión al borrar la categoría");
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (confirm("¿Seguro que quieres eliminar esta categoría? Esto podría afectar a los productos asociados.")) {
+        performDelete();
+      }
+    } else {
+      Alert.alert("Eliminar", "¿Seguro que quieres eliminar esta categoría? Esto podría afectar a los productos asociados.", [
+        { text: "No" },
+        { text: "Sí", onPress: performDelete }
+      ]);
+    }
   };
 
   const handleEditCategory = (cat) => {
@@ -252,24 +265,37 @@ export default function AdminScreen() {
   };
 
   const handleDeleteProduct = async (id) => {
-    Alert.alert("Eliminar", "¿Seguro que quieres eliminar este producto?", [
-      { text: "No" },
-      { text: "Sí", onPress: async () => {
-        try {
-          const res = await fetch(`${API_URL}/products/${id}`, { 
-            method: 'DELETE',
-            headers: { 'bypass-tunnel-reminder': 'true' }
-          });
-          const data = await res.json();
-          if (!data.success) {
-            alert(`Error al borrar producto: ${data.message || 'Error desconocido'}`);
-          }
-          fetchData();
-        } catch (e) {
-          alert("Error de conexión al borrar el producto");
+    console.log(`[Admin] Clicked delete product ID: ${id}`);
+
+    const performDelete = async () => {
+      try {
+        console.log(`[Admin] Sending DELETE request for product ${id}`);
+        const res = await fetch(`${API_URL}/products/${id}`, { 
+          method: 'DELETE',
+          headers: { 'bypass-tunnel-reminder': 'true' }
+        });
+        const data = await res.json();
+        console.log(`[Admin] Server response:`, data);
+        if (!data.success) {
+          alert(`Error al borrar producto: ${data.message || 'Error desconocido'}`);
         }
-      }}
-    ]);
+        fetchData();
+      } catch (e) {
+        console.error(`[Admin] Connection error:`, e);
+        alert("Error de conexión al borrar el producto");
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (confirm("¿Seguro que quieres eliminar este producto?")) {
+        performDelete();
+      }
+    } else {
+      Alert.alert("Eliminar", "¿Seguro que quieres eliminar este producto?", [
+        { text: "No" },
+        { text: "Sí", onPress: performDelete }
+      ]);
+    }
   };
 
   const handleEditProduct = (prod) => {
