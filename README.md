@@ -4,7 +4,7 @@ Esta es la aplicación móvil oficial del **Supermercado CIMA**, desarrollada co
 
 ## 🚀 Tecnologías Utilizadas
 
-- **App:** [React Native](https://reactnative.dev/) & [Expo](https://expo.dev/)
+- **App & Web:** [React Native](https://reactnative.dev/) & [Expo](https://expo.dev/)
 - **Backend:** Node.js + Express
 - **Base de Datos:** SQLite
 - **Navegación:** [Expo Router](https://docs.expo.dev/router/introduction)
@@ -53,6 +53,26 @@ Esta configuración permite que las tablets de la empresa se conecten a un orden
    npx eas build -p android --profile preview
    ```
 4. Descarga el archivo `.apk` e instálalo en todas las tablets.
+
+---
+
+## 🌐 ACCESO VERSIÓN WEB
+
+Cualquier persona en la misma red local puede acceder a la aplicación desde un navegador (PC, Portátil, etc.) sin instalar nada.
+
+### 1. Generar la Web (Una sola vez)
+En la raíz del proyecto, ejecuta:
+```bash
+npx expo export --platform web
+```
+Esto creará una carpeta `dist/` con los archivos de la web.
+
+### 2. Acceder
+Una vez el servidor esté corriendo (`pm2 start index.js`), simplemente abre el navegador y escribe:
+`http://[IP-DEL-SERVIDOR]:3000`
+
+> [!TIP]
+> La versión web utiliza la **misma base de datos** y el mismo panel de administración que las tablets, ya que ambas se conectan al mismo servidor Node.js.
 
 ---
 

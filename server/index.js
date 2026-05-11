@@ -11,6 +11,10 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// Servir la versión Web (si existe la carpeta dist en la raíz)
+const distPath = path.resolve(__dirname, '../dist');
+app.use(express.static(distPath));
+
 const dbPath = path.resolve(__dirname, 'database.sqlite');
 
 let db;
