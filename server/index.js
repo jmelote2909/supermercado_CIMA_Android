@@ -457,6 +457,17 @@ const PORT = process.env.PORT || 3000;
     ]);
     console.log('Connection pool pre-warmed (5 connections ready)');
 
+    // Heartbeat: mantener las conexiones vivas enviando una consulta mínima cada 30s.
+    // Evita que el firewall o el servidor PostgreSQL cierre las conexiones inactivas.
+    setInterval(async () => {
+      try {
+        await pool.query('SELECT 1');
+        // console.log('[Heartbeat] Pool connection kept alive');
+      } catch (e) {
+        console.warn('[Heartbeat] Failed to keep connection alive:', e.message);
+      }
+    }, 30000); // cada 30 segundos
+
     // Create tables (PostgreSQL dialect)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
