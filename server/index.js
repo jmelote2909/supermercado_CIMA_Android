@@ -432,6 +432,12 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Catch-all: para rutas de la SPA (ej: /admin, /shop) devolver index.html
+// DEBE ir después de todas las rutas de API y del middleware de errores
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
 const PORT = process.env.PORT || 3000;
 (async () => {
   try {
