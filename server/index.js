@@ -25,21 +25,31 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000, // Aumentar un poco por si la red es lenta
+  connectionTimeoutMillis: 5000,
+  ssl: false, // Desactivar SSL para evitar timeouts de negociación
 });
 
 // Helper simplificado para PostgreSQL
 const db = {
   get: async (query, params = []) => {
+    const start = Date.now();
     const res = await pool.query(query, params);
+    const duration = Date.now() - start;
+    if (duration > 100) console.log(`[DB Slow Get] ${duration}ms - Query: ${query.substring(0, 50)}...`);
     return res.rows[0];
   },
   all: async (query, params = []) => {
+    const start = Date.now();
     const res = await pool.query(query, params);
+    const duration = Date.now() - start;
+    if (duration > 100) console.log(`[DB Slow All] ${duration}ms - Query: ${query.substring(0, 50)}...`);
     return res.rows;
   },
   run: async (query, params = []) => {
+    const start = Date.now();
     const res = await pool.query(query, params);
+    const duration = Date.now() - start;
+    if (duration > 100) console.log(`[DB Slow Run] ${duration}ms - Query: ${query.substring(0, 50)}...`);
     return { 
       lastID: res.rows[0]?.id,
       rowCount: res.rowCount 
