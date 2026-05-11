@@ -107,8 +107,8 @@ app.post('/api/admin/login', async (req, res, next) => {
     const { username, password } = req.body;
     console.log(`[Admin Login Attempt] User: ${username}`);
 
-    const adminUser = await db.get('SELECT value FROM config WHERE key = "admin_user"');
-    const adminPass = await db.get('SELECT value FROM config WHERE key = "admin_pass"');
+    const adminUser = await db.get("SELECT value FROM config WHERE key = 'admin_user'");
+    const adminPass = await db.get("SELECT value FROM config WHERE key = 'admin_pass'");
 
     if (adminUser && adminPass && username === adminUser.value && await bcrypt.compare(password, adminPass.value)) {
       console.log('[Admin Login] Success');
@@ -222,7 +222,7 @@ app.post('/api/orders', async (req, res) => {
   const result = await db.run('INSERT INTO orders (username, items, status, date) VALUES (?, ?, ?, ?) RETURNING id', [username, JSON.stringify(items), status, date]);
   
   // Obtener el correo destino de la configuración
-  const config = await db.get('SELECT value FROM config WHERE key = "target_email"');
+  const config = await db.get("SELECT value FROM config WHERE key = 'target_email'");
   console.log('Enviando email a:', config.value);
   
   // Enviar el correo
@@ -251,8 +251,8 @@ app.post('/api/config', async (req, res) => {
 
 app.post('/api/config/test_email', async (req, res) => {
   try {
-    const target = await db.get('SELECT value FROM config WHERE key = "target_email"');
-    const smtpPass = await db.get('SELECT value FROM config WHERE key = "smtp_pass"');
+    const target = await db.get("SELECT value FROM config WHERE key = 'target_email'");
+    const smtpPass = await db.get("SELECT value FROM config WHERE key = 'smtp_pass'");
     
     if (!target || !smtpPass) {
       throw new Error('Configuración incompleta');
@@ -284,11 +284,11 @@ app.post('/api/admin/update_credentials', async (req, res) => {
   const { username, password } = req.body;
   try {
     if (username) {
-      await db.run('UPDATE config SET value = ? WHERE key = "admin_user"', [username.trim()]);
+      await db.run("UPDATE config SET value = $1 WHERE key = 'admin_user'", [username.trim()]);
     }
     if (password) {
       const hashedPass = await bcrypt.hash(password.trim(), 10);
-      await db.run('UPDATE config SET value = ? WHERE key = "admin_pass"', [hashedPass]);
+      await db.run("UPDATE config SET value = $1 WHERE key = 'admin_pass'", [hashedPass]);
     }
     res.json({ success: true });
   } catch (e) {
