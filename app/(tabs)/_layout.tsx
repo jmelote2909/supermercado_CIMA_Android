@@ -6,22 +6,26 @@ export default function TabLayout() {
   const router = useRouter();
   
   const handleLogout = () => {
-    Alert.alert(
-      "Cerrar sesión",
-      "¿Estás seguro de que quieres salir?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Salir", 
-          style: "destructive",
-          onPress: () => {
-            setTimeout(() => {
-              router.replace('/');
-            }, 100);
-          }
-        }
-      ]
-    );
+    const logoutAction = () => {
+      setTimeout(() => {
+        router.replace('/');
+      }, 100);
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm("¿Estás seguro de que quieres salir?")) {
+        logoutAction();
+      }
+    } else {
+      Alert.alert(
+        "Cerrar sesión",
+        "¿Estás seguro de que quieres salir?",
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Salir", style: "destructive", onPress: logoutAction }
+        ]
+      );
+    }
   };
 
   return (
