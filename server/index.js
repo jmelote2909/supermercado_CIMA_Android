@@ -132,10 +132,11 @@ app.post('/api/users', async (req, res) => {
   const { username, password, role } = req.body;
   try {
     const hashedPass = await bcrypt.hash(password, 10);
-    await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPass, role || 'User']);
+    await db.run('INSERT INTO users (username, password, role) VALUES ($1, $2, $3)', [username, hashedPass, role || 'User']);
     res.json({ success: true });
   } catch (e) {
-    res.status(400).json({ success: false, message: 'El usuario ya existe o error en DB' });
+    console.error('Error creating user:', e);
+    res.status(400).json({ success: false, message: 'Error al crear usuario o el usuario ya existe' });
   }
 });
 
@@ -145,12 +146,13 @@ app.patch('/api/users/:id', async (req, res) => {
   try {
     if (password) {
       const hashedPass = await bcrypt.hash(password, 10);
-      await db.run('UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?', [username, hashedPass, role || 'User', id]);
+      await db.run('UPDATE users SET username = $1, password = $2, role = $3 WHERE id = $4', [username, hashedPass, role || 'User', id]);
     } else {
-      await db.run('UPDATE users SET username = ?, role = ? WHERE id = ?', [username, role || 'User', id]);
+      await db.run('UPDATE users SET username = $1, role = $2 WHERE id = $3', [username, role || 'User', id]);
     }
     res.json({ success: true });
   } catch (e) {
+    console.error('Error updating user:', e);
     res.status(400).json({ success: false, message: 'Error al actualizar usuario' });
   }
 });
@@ -169,17 +171,23 @@ app.get('/api/categories', async (req, res) => {
 app.post('/api/categories', async (req, res) => {
   const { name } = req.body;
   try {
-    await db.run('INSERT INTO categories (name) VALUES (?)', [name]);
+    await db.run('INSERT INTO categories (name) VALUES ($1)', [name]);
     res.json({ success: true });
   } catch (e) {
-    res.status(400).json({ success: false, message: 'La categoría ya existe' });
+    console.error('Error creating category:', e);
+    res.status(400).json({ success: false, message: 'La categoría ya existe o error de permisos' });
   }
 });
 
 app.patch('/api/categories/:id', async (req, res) => {
   const { name } = req.body;
-  await db.run('UPDATE categories SET name = ? WHERE id = ?', [name, req.params.id]);
-  res.json({ success: true });
+  try {
+    await db.run('UPDATE categories SET name = $1 WHERE id = $2', [name, req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error updating category:', e);
+    res.status(400).json({ success: false, message: 'Error al actualizar categoría' });
+  }
 });
 
 app.delete('/api/categories/:id', async (req, res) => {
@@ -195,14 +203,24 @@ app.get('/api/products', async (req, res) => {
 
 app.post('/api/products', async (req, res) => {
   const { name, category_name, image } = req.body;
-  await db.run('INSERT INTO products (name, category_name, image) VALUES (?, ?, ?)', [name, category_name, image]);
-  res.json({ success: true });
+  try {
+    await db.run('INSERT INTO products (name, category_name, image) VALUES ($1, $2, $3)', [name, category_name, image]);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error creating product:', e);
+    res.status(400).json({ success: false, message: 'Error al crear producto' });
+  }
 });
 
 app.patch('/api/products/:id', async (req, res) => {
   const { name, category_name, image } = req.body;
-  await db.run('UPDATE products SET name = ?, category_name = ?, image = ? WHERE id = ?', [name, category_name, image, req.params.id]);
-  res.json({ success: true });
+  try {
+    await db.run('UPDATE products SET name = $1, category_name = $2, image = $3 WHERE id = $4', [name, category_name, image, req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error updating product:', e);
+    res.status(400).json({ success: false, message: 'Error al actualizar producto' });
+  }
 });
 
 app.delete('/api/products/:id', async (req, res) => {
@@ -217,24 +235,34 @@ app.get('/api/orders', async (req, res) => {
 });
 
 app.post('/api/orders', async (req, res) => {
-  console.log('Recibida petición de pedido:', req.body);
-  const { username, items, status, date } = req.body;
-  const result = await db.run('INSERT INTO orders (username, items, status, date) VALUES (?, ?, ?, ?) RETURNING id', [username, JSON.stringify(items), status, date]);
-  
-  // Obtener el correo destino de la configuración
-  const config = await db.get("SELECT value FROM config WHERE key = 'target_email'");
-  console.log('Enviando email a:', config.value);
-  
-  // Enviar el correo
-  await sendOrderEmail(config.value, { id: result.lastID, username, items: JSON.stringify(items), date });
-  
-  res.json({ success: true });
+  try {
+    console.log('Recibida petición de pedido:', req.body);
+    const { username, items, status, date } = req.body;
+    const result = await db.run('INSERT INTO orders (username, items, status, date) VALUES ($1, $2, $3, $4) RETURNING id', [username, JSON.stringify(items), status, date]);
+    
+    // Obtener el correo destino de la configuración
+    const config = await db.get("SELECT value FROM config WHERE key = 'target_email'");
+    console.log('Enviando email a:', config.value);
+    
+    // Enviar el correo
+    await sendOrderEmail(config.value, { id: result.lastID, username, items: JSON.stringify(items), date });
+    
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error creating order:', e);
+    res.status(500).json({ success: false, message: 'Error al procesar el pedido' });
+  }
 });
 
 app.patch('/api/orders/:id', async (req, res) => {
   const { status } = req.body;
-  await db.run('UPDATE orders SET status = ? WHERE id = ?', [status, req.params.id]);
-  res.json({ success: true });
+  try {
+    await db.run('UPDATE orders SET status = $1 WHERE id = $2', [status, req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error updating order:', e);
+    res.status(400).json({ success: false, message: 'Error al actualizar pedido' });
+  }
 });
 
 // --- Config ---
