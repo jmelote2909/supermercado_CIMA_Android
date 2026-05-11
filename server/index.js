@@ -23,9 +23,9 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'supermercado_cima',
   password: process.env.DB_PASSWORD || 'postgres',
   port: process.env.DB_PORT || 5432,
-  max: 20, // Aumentar conexiones máximas
+  max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 5000, // Aumentar un poco por si la red es lenta
 });
 
 // Helper simplificado para PostgreSQL
@@ -292,8 +292,20 @@ app.patch('/api/orders/:id', async (req, res) => {
 });
 
 // --- Config ---
+app.get('/api/config-all', async (req, res) => {
+  try {
+    const rows = await db.all('SELECT key, value FROM config');
+    const config = {};
+    rows.forEach(r => config[r.key] = r.value);
+    res.json(config);
+  } catch (e) {
+    console.error('Error fetching all config:', e);
+    res.status(500).json({ success: false });
+  }
+});
+
 app.get('/api/config/:key', async (req, res) => {
-  const row = await db.get('SELECT value FROM config WHERE key = $1::text', [req.params.key]);
+  const row = await db.get('SELECT value FROM config WHERE key = $1', [req.params.key]);
   res.json({ [req.params.key]: row ? row.value : '' });
 });
 

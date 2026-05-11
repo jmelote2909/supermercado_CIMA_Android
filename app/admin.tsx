@@ -35,23 +35,21 @@ export default function AdminScreen() {
 
   const fetchData = async () => {
     try {
-      const [uRes, cRes, passRes, targetRes, prRes, adminUserRes] = await Promise.all([
+      const [uRes, cRes, prRes, configRes] = await Promise.all([
         fetch(`${API_URL}/users`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
         fetch(`${API_URL}/categories`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
-        fetch(`${API_URL}/config/smtp_pass`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
-        fetch(`${API_URL}/config/target_email`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
         fetch(`${API_URL}/products`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
-        fetch(`${API_URL}/config/admin_user`, { headers: { 'bypass-tunnel-reminder': 'true' } })
+        fetch(`${API_URL}/config-all`, { headers: { 'bypass-tunnel-reminder': 'true' } })
       ]);
-      const [uData, cData, passData, targetData, prData, adminUserData] = await Promise.all([
-        uRes.json(), cRes.json(), passRes.json(), targetRes.json(), prRes.json(), adminUserRes.json()
+      const [uData, cData, prData, configData] = await Promise.all([
+        uRes.json(), cRes.json(), prRes.json(), configRes.json()
       ]);
       setUsers(uData);
       setCategories(cData);
       setProducts(prData);
-      setSmtpPassword(passData.smtp_pass);
-      setTargetEmail(targetData.target_email);
-      setAdminUsername(adminUserData.admin_user);
+      setSmtpPassword(configData.smtp_pass || '');
+      setTargetEmail(configData.target_email || '');
+      setAdminUsername(configData.admin_user || 'admin');
     } catch (e) {
       alert('Error conectando con el servidor');
     } finally {
