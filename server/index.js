@@ -107,7 +107,7 @@ async function sendOrderEmail(targetEmail, order) {
 // --- Users ---
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  const user = await db.get('SELECT * FROM users WHERE username = $1::text', [username]);
+  const user = await db.get('SELECT * FROM users WHERE username = $1', [username]);
   
   if (user && await bcrypt.compare(password, user.password)) {
     res.json({ success: true, user });
@@ -185,7 +185,7 @@ app.get('/api/categories', async (req, res) => {
 app.post('/api/categories', async (req, res) => {
   const { name } = req.body;
   try {
-    await db.run('INSERT INTO categories (name) VALUES ($1::text)', [name]);
+    await db.run('INSERT INTO categories (name) VALUES ($1)', [name]);
     res.json({ success: true });
   } catch (e) {
     console.error('Error creating category:', e);
@@ -196,7 +196,7 @@ app.post('/api/categories', async (req, res) => {
 app.patch('/api/categories/:id', async (req, res) => {
   const { name } = req.body;
   try {
-    await db.run('UPDATE categories SET name = $1::text WHERE id = $2', [name, req.params.id]);
+    await db.run('UPDATE categories SET name = $1 WHERE id = $2', [name, req.params.id]);
     res.json({ success: true });
   } catch (e) {
     console.error('Error updating category:', e);
