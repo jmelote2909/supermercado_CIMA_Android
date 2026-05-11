@@ -43,10 +43,7 @@ export default function OrdersScreen() {
     }
   };
 
-  const exportCSV = () => {
-    // Aquí implementaremos la lógica de exportación
-    alert('Exportando a CSV...');
-  };
+
 
   const renderOrder = ({ item }) => (
     <TouchableOpacity 
@@ -90,10 +87,6 @@ export default function OrdersScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Historial de Pedidos</Text>
-        <TouchableOpacity style={styles.exportButton} onPress={exportCSV}>
-          <MaterialCommunityIcons name="export" size={20} color="#FFF" />
-          <Text style={styles.exportText}>Exportar</Text>
-        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -183,19 +176,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1F2937',
   },
-  exportButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#111827',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  exportText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginLeft: 5,
-  },
+
   list: {
     padding: 15,
   },
