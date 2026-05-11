@@ -24,9 +24,11 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'postgres',
   port: process.env.DB_PORT || 5432,
   max: 20,
-  idleTimeoutMillis: 30000,
+  idleTimeoutMillis: 60000,       // Mantener conexiones inactivas 60s
   connectionTimeoutMillis: 5000,
-  ssl: false, // Desactivar SSL para evitar timeouts de negociación
+  ssl: false,
+  keepAlive: true,                // Mantener TCP vivo para evitar drops por firewall
+  keepAliveInitialDelayMillis: 10000,
 });
 
 // Helper simplificado para PostgreSQL
