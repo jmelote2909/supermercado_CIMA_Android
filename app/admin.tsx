@@ -208,11 +208,19 @@ export default function AdminScreen() {
     Alert.alert("Eliminar", "¿Seguro que quieres eliminar esta categoría? Esto podría afectar a los productos asociados.", [
       { text: "No" },
       { text: "Sí", onPress: async () => {
-        await fetch(`${API_URL}/categories/${id}`, { 
-          method: 'DELETE',
-          headers: { 'bypass-tunnel-reminder': 'true' }
-        });
-        fetchData();
+        try {
+          const res = await fetch(`${API_URL}/categories/${id}`, { 
+            method: 'DELETE',
+            headers: { 'bypass-tunnel-reminder': 'true' }
+          });
+          const data = await res.json();
+          if (!data.success) {
+            alert(`Error al borrar: ${data.message || 'Error desconocido'}`);
+          }
+          fetchData();
+        } catch (e) {
+          alert("Error de conexión al borrar la categoría");
+        }
       }}
     ]);
   };
@@ -247,11 +255,19 @@ export default function AdminScreen() {
     Alert.alert("Eliminar", "¿Seguro que quieres eliminar este producto?", [
       { text: "No" },
       { text: "Sí", onPress: async () => {
-        await fetch(`${API_URL}/products/${id}`, { 
-          method: 'DELETE',
-          headers: { 'bypass-tunnel-reminder': 'true' }
-        });
-        fetchData();
+        try {
+          const res = await fetch(`${API_URL}/products/${id}`, { 
+            method: 'DELETE',
+            headers: { 'bypass-tunnel-reminder': 'true' }
+          });
+          const data = await res.json();
+          if (!data.success) {
+            alert(`Error al borrar producto: ${data.message || 'Error desconocido'}`);
+          }
+          fetchData();
+        } catch (e) {
+          alert("Error de conexión al borrar el producto");
+        }
       }}
     ]);
   };

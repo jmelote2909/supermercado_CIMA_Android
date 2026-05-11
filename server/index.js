@@ -408,6 +408,18 @@ const PORT = process.env.PORT || 3000;
       );
     `);
 
+    // Intentar asegurar el ON DELETE CASCADE por si la tabla ya existía sin él
+    try {
+      await pool.query(`
+        ALTER TABLE products DROP CONSTRAINT IF EXISTS products_category_name_fkey;
+        ALTER TABLE products ADD CONSTRAINT products_category_name_fkey 
+        FOREIGN KEY (category_name) REFERENCES categories(name) ON DELETE CASCADE;
+      `);
+      console.log('Foreign key constraint updated (ON DELETE CASCADE)');
+    } catch (fkError) {
+      console.warn('Could not update foreign key constraint (might already be correct or name differs):', fkError.message);
+    }
+
     // Initial Data
     const adminUserExists = await db.get('SELECT * FROM users WHERE username = $1', ['admin']);
     if (!adminUserExists) {
