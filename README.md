@@ -6,7 +6,7 @@ Esta es la aplicación móvil oficial del **Supermercado CIMA**, desarrollada co
 
 - **App & Web:** [React Native](https://reactnative.dev/) & [Expo](https://expo.dev/)
 - **Backend:** Node.js + Express
-- **Base de Datos:** SQLite
+- **Base de Datos:** PostgreSQL
 - **Navegación:** [Expo Router](https://docs.expo.dev/router/introduction)
 - **Actualizaciones:** Expo OTA Updates
 
@@ -19,6 +19,8 @@ Esta configuración permite que las tablets de la empresa se conecten a un orden
 ### 1. Preparar el Ordenador Central (Servidor)
 
 1. **Instalar Node.js:** Descarga la versión LTS en [nodejs.org](https://nodejs.org/).
+2. **Instalar PostgreSQL:** Asegúrate de tener un servidor PostgreSQL funcionando.
+3. **Configurar variables de entorno:** Crea un archivo `.env` en la carpeta `server/` basado en `.env.example`.
 2. **Fijar IP Estática (Crucial):**
    - Ve a Propiedades de tu conexión Wi-Fi/Ethernet > IPv4.
    - Asigna una IP fija (ej: `192.168.1.100`) para que la app no pierda la conexión al reiniciar el router.

@@ -1,7 +1,7 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const sqlite3 = require('sqlite3');
-const { open } = require('sqlite');
+const { Pool } = require('pg');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
@@ -15,12 +15,30 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 const distPath = path.resolve(__dirname, '../dist');
 app.use(express.static(distPath));
 
-const dbPath = path.resolve(__dirname, 'database.sqlite');
+// Configuración de PostgreSQL
+const pool = new Pool({
+  user: process.env.DB_USER || 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME || 'supermercado_cima',
+  password: process.env.DB_PASSWORD || 'postgres',
+  port: process.env.DB_PORT || 5432,
+});
 
-let db;
-
-// Moved initialization inside (async () => { ... }) at the end of the file
-
+// Helper para compatibilidad con el código anterior (db.get, db.all, db.run)
+const db = {
+  get: async (query, params = []) => {
+    const res = await pool.query(query.replace(/\?/g, (_, i) => `$${i + 1}`), params);
+    return res.rows[0];
+  },
+  all: async (query, params = []) => {
+    const res = await pool.query(query.replace(/\?/g, (_, i) => `$${i + 1}`), params);
+    return res.rows;
+  },
+  run: async (query, params = []) => {
+    const res = await pool.query(query.replace(/\?/g, (_, i) => `$${i + 1}`), params);
+    return { lastID: res.rows[0]?.id }; // Aproximación para lastID
+  }
+};
 
 // Función para obtener el transporter con los datos actuales de la DB
 async function sendOrderEmail(targetEmail, order) {
@@ -86,11 +104,6 @@ app.post('/api/admin/login', async (req, res, next) => {
     const { username, password } = req.body;
     console.log(`[Admin Login Attempt] User: ${username}`);
 
-    if (!db) {
-      console.error('[Admin Login] Database not initialized');
-      return res.status(503).json({ success: false, message: 'Servidor iniciando, reintente en unos segundos' });
-    }
-
     const adminUser = await db.get('SELECT value FROM config WHERE key = "admin_user"');
     const adminPass = await db.get('SELECT value FROM config WHERE key = "admin_pass"');
 
@@ -119,7 +132,7 @@ app.post('/api/users', async (req, res) => {
     await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPass, role || 'User']);
     res.json({ success: true });
   } catch (e) {
-    res.status(400).json({ success: false, message: 'El usuario ya existe' });
+    res.status(400).json({ success: false, message: 'El usuario ya existe o error en DB' });
   }
 });
 
@@ -203,7 +216,7 @@ app.get('/api/orders', async (req, res) => {
 app.post('/api/orders', async (req, res) => {
   console.log('Recibida petición de pedido:', req.body);
   const { username, items, status, date } = req.body;
-  const result = await db.run('INSERT INTO orders (username, items, status, date) VALUES (?, ?, ?, ?)', [username, JSON.stringify(items), status, date]);
+  const result = await db.run('INSERT INTO orders (username, items, status, date) VALUES (?, ?, ?, ?) RETURNING id', [username, JSON.stringify(items), status, date]);
   
   // Obtener el correo destino de la configuración
   const config = await db.get('SELECT value FROM config WHERE key = "target_email"');
@@ -229,7 +242,7 @@ app.get('/api/config/:key', async (req, res) => {
 
 app.post('/api/config', async (req, res) => {
   const { key, value } = req.body;
-  await db.run('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', [key, value]);
+  await db.run('INSERT INTO config (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', [key, value]);
   res.json({ success: true });
 });
 
@@ -290,47 +303,45 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 (async () => {
   try {
-    // Open database
-    db = await open({
-      filename: dbPath,
-      driver: sqlite3.Database
-    });
+    // Probar conexión a PostgreSQL
+    await pool.query('SELECT NOW()');
+    console.log('PostgreSQL connected');
 
-    // Create tables (ensure this runs before any request)
-    await db.exec(`
+    // Create tables (PostgreSQL dialect)
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE,
         password TEXT,
-        role TEXT
+        role VARCHAR(50)
       );
 
       CREATE TABLE IF NOT EXISTS categories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE
       );
 
       CREATE TABLE IF NOT EXISTS products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        category_name TEXT,
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255),
+        category_name VARCHAR(255),
         image TEXT,
-        FOREIGN KEY(category_name) REFERENCES categories(name)
+        FOREIGN KEY(category_name) REFERENCES categories(name) ON DELETE CASCADE
       );
 
       CREATE TABLE IF NOT EXISTS orders (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255),
         items TEXT,
-        status TEXT,
-        date TEXT
+        status VARCHAR(50),
+        date VARCHAR(100)
       );
 
       CREATE TABLE IF NOT EXISTS config (
-        key TEXT PRIMARY KEY,
+        key VARCHAR(255) PRIMARY KEY,
         value TEXT
       );
     `);
