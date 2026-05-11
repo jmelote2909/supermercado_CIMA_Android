@@ -18,10 +18,13 @@ app.use(express.static(distPath));
 // Configuración de PostgreSQL
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST === 'localhost' ? '127.0.0.1' : (process.env.DB_HOST || '127.0.0.1'),
   database: process.env.DB_NAME || 'supermercado_cima',
   password: process.env.DB_PASSWORD || 'postgres',
   port: process.env.DB_PORT || 5432,
+  max: 20, // Aumentar conexiones máximas
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 // Helper simplificado para PostgreSQL
@@ -188,8 +191,16 @@ app.patch('/api/categories/:id', async (req, res) => {
 });
 
 app.delete('/api/categories/:id', async (req, res) => {
-  await db.run('DELETE FROM categories WHERE id = $1', [req.params.id]);
-  res.json({ success: true });
+  const { id } = req.params;
+  try {
+    console.log(`[Delete Category] Attempting to delete ID: ${id}`);
+    const result = await db.run('DELETE FROM categories WHERE id = $1', [id]);
+    console.log(`[Delete Category] Success for ID: ${id}`);
+    res.json({ success: true });
+  } catch (e) {
+    console.error(`[Delete Category] Error for ID ${id}:`, e);
+    res.status(500).json({ success: false, message: 'Error al borrar la categoría', error: e.message });
+  }
 });
 
 // --- Products ---
