@@ -6,6 +6,7 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -39,13 +40,16 @@ const db = {
   },
   run: async (query, params = []) => {
     const res = await pool.query(query, params);
-    return { lastID: res.rows[0]?.id };
+    return { 
+      lastID: res.rows[0]?.id,
+      rowCount: res.rowCount 
+    };
   }
 };
 
 // Función para obtener el transporter con los datos actuales de la DB
 async function sendOrderEmail(targetEmail, order) {
-  const smtpPass = await db.get('SELECT value FROM config WHERE key = ?', ['smtp_pass']);
+  const smtpPass = await db.get('SELECT value FROM config WHERE key = $1', ['smtp_pass']);
 
   if (!targetEmail || !smtpPass) return;
 
@@ -231,9 +235,23 @@ app.patch('/api/products/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/products/:id', async (req, res) => {
-  await db.run('DELETE FROM products WHERE id = $1', [req.params.id]);
-  res.json({ success: true });
+app.delete('/api/products/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    console.log(`[Delete Product] Attempting to delete ID: ${id}`);
+    const result = await db.run('DELETE FROM products WHERE id = $1', [id]);
+    
+    if (result.rowCount === 0) {
+      console.warn(`[Delete Product] Product with ID ${id} not found`);
+      return res.status(404).json({ success: false, message: 'Producto no encontrado' });
+    }
+
+    console.log(`[Delete Product] Success for ID: ${id}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error(`[Delete Product] Error for ID ${req.params.id}:`, error);
+    next(error);
+  }
 });
 
 // --- Orders ---
@@ -279,10 +297,15 @@ app.get('/api/config/:key', async (req, res) => {
   res.json({ [req.params.key]: row ? row.value : '' });
 });
 
-app.post('/api/config', async (req, res) => {
-  const { key, value } = req.body;
-  await db.run('INSERT INTO config (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', [key, value]);
-  res.json({ success: true });
+app.post('/api/config', async (req, res, next) => {
+  try {
+    const { key, value } = req.body;
+    await db.run('INSERT INTO config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', [key, value]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving config:', error);
+    next(error);
+  }
 });
 
 app.post('/api/config/test_email', async (req, res) => {
