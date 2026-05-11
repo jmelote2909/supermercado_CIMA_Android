@@ -24,21 +24,18 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
 });
 
-// Helper para compatibilidad con el código anterior
+// Helper simplificado para PostgreSQL
 const db = {
   get: async (query, params = []) => {
-    const pgQuery = query.replace(/\?/g, (_, i) => `$${i + 1}`);
-    const res = await pool.query(pgQuery, params);
+    const res = await pool.query(query, params);
     return res.rows[0];
   },
   all: async (query, params = []) => {
-    const pgQuery = query.replace(/\?/g, (_, i) => `$${i + 1}`);
-    const res = await pool.query(pgQuery, params);
+    const res = await pool.query(query, params);
     return res.rows;
   },
   run: async (query, params = []) => {
-    const pgQuery = query.replace(/\?/g, (_, i) => `$${i + 1}`);
-    const res = await pool.query(pgQuery, params);
+    const res = await pool.query(query, params);
     return { lastID: res.rows[0]?.id };
   }
 };
@@ -93,7 +90,7 @@ async function sendOrderEmail(targetEmail, order) {
 // --- Users ---
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  const user = await db.get('SELECT * FROM users WHERE username = ?', [username]);
+  const user = await db.get('SELECT * FROM users WHERE username = $1::text', [username]);
   
   if (user && await bcrypt.compare(password, user.password)) {
     res.json({ success: true, user });
@@ -158,7 +155,7 @@ app.patch('/api/users/:id', async (req, res) => {
 });
 
 app.delete('/api/users/:id', async (req, res) => {
-  await db.run('DELETE FROM users WHERE id = ?', [req.params.id]);
+  await db.run('DELETE FROM users WHERE id = $1', [req.params.id]);
   res.json({ success: true });
 });
 
@@ -171,7 +168,7 @@ app.get('/api/categories', async (req, res) => {
 app.post('/api/categories', async (req, res) => {
   const { name } = req.body;
   try {
-    await db.run('INSERT INTO categories (name) VALUES ($1)', [name]);
+    await db.run('INSERT INTO categories (name) VALUES ($1::text)', [name]);
     res.json({ success: true });
   } catch (e) {
     console.error('Error creating category:', e);
@@ -182,7 +179,7 @@ app.post('/api/categories', async (req, res) => {
 app.patch('/api/categories/:id', async (req, res) => {
   const { name } = req.body;
   try {
-    await db.run('UPDATE categories SET name = $1 WHERE id = $2', [name, req.params.id]);
+    await db.run('UPDATE categories SET name = $1::text WHERE id = $2', [name, req.params.id]);
     res.json({ success: true });
   } catch (e) {
     console.error('Error updating category:', e);
@@ -191,7 +188,7 @@ app.patch('/api/categories/:id', async (req, res) => {
 });
 
 app.delete('/api/categories/:id', async (req, res) => {
-  await db.run('DELETE FROM categories WHERE id = ?', [req.params.id]);
+  await db.run('DELETE FROM categories WHERE id = $1', [req.params.id]);
   res.json({ success: true });
 });
 
@@ -224,7 +221,7 @@ app.patch('/api/products/:id', async (req, res) => {
 });
 
 app.delete('/api/products/:id', async (req, res) => {
-  await db.run('DELETE FROM products WHERE id = ?', [req.params.id]);
+  await db.run('DELETE FROM products WHERE id = $1', [req.params.id]);
   res.json({ success: true });
 });
 
@@ -267,7 +264,7 @@ app.patch('/api/orders/:id', async (req, res) => {
 
 // --- Config ---
 app.get('/api/config/:key', async (req, res) => {
-  const row = await db.get('SELECT value FROM config WHERE key = ?', [req.params.key]);
+  const row = await db.get('SELECT value FROM config WHERE key = $1::text', [req.params.key]);
   res.json({ [req.params.key]: row ? row.value : '' });
 });
 
