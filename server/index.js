@@ -24,19 +24,22 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
 });
 
-// Helper para compatibilidad con el código anterior (db.get, db.all, db.run)
+// Helper para compatibilidad con el código anterior
 const db = {
   get: async (query, params = []) => {
-    const res = await pool.query(query.replace(/\?/g, (_, i) => `$${i + 1}`), params);
+    const pgQuery = query.replace(/\?/g, (_, i) => `$${i + 1}`);
+    const res = await pool.query(pgQuery, params);
     return res.rows[0];
   },
   all: async (query, params = []) => {
-    const res = await pool.query(query.replace(/\?/g, (_, i) => `$${i + 1}`), params);
+    const pgQuery = query.replace(/\?/g, (_, i) => `$${i + 1}`);
+    const res = await pool.query(pgQuery, params);
     return res.rows;
   },
   run: async (query, params = []) => {
-    const res = await pool.query(query.replace(/\?/g, (_, i) => `$${i + 1}`), params);
-    return { lastID: res.rows[0]?.id }; // Aproximación para lastID
+    const pgQuery = query.replace(/\?/g, (_, i) => `$${i + 1}`);
+    const res = await pool.query(pgQuery, params);
+    return { lastID: res.rows[0]?.id };
   }
 };
 
@@ -347,19 +350,19 @@ const PORT = process.env.PORT || 3000;
     `);
 
     // Initial Data
-    const adminUserExists = await db.get('SELECT * FROM users WHERE username = ?', ['admin']);
+    const adminUserExists = await db.get('SELECT * FROM users WHERE username = $1', ['admin']);
     if (!adminUserExists) {
       const hashedPass = await bcrypt.hash('1234', 10);
-      await db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', hashedPass, 'Admin']);
+      await db.run('INSERT INTO users (username, password, role) VALUES ($1, $2, $3)', ['admin', hashedPass, 'Admin']);
     }
 
-    const adminConfigExists = await db.get('SELECT key FROM config WHERE key = "admin_user"');
+    const adminConfigExists = await db.get('SELECT key FROM config WHERE key = $1', ['admin_user']);
     if (!adminConfigExists) {
       const hashedPass = await bcrypt.hash('1234', 10);
-      await db.run("INSERT INTO config (key, value) VALUES ('admin_user', 'admin')");
-      await db.run("INSERT INTO config (key, value) VALUES ('admin_pass', ?)", [hashedPass]);
-      await db.run("INSERT INTO config (key, value) VALUES ('target_email', 'tu-email@gmail.com')");
-      await db.run("INSERT INTO config (key, value) VALUES ('smtp_pass', '')");
+      await db.run("INSERT INTO config (key, value) VALUES ($1, $2)", ['admin_user', 'admin']);
+      await db.run("INSERT INTO config (key, value) VALUES ($1, $2)", ['admin_pass', hashedPass]);
+      await db.run("INSERT INTO config (key, value) VALUES ($1, $2)", ['target_email', 'tu-email@gmail.com']);
+      await db.run("INSERT INTO config (key, value) VALUES ($1, $2)", ['smtp_pass', '']);
     }
 
     console.log('Database initialized');
