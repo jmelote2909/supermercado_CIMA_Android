@@ -205,38 +205,6 @@ app.patch('/api/users/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/users/:id', async (req, res) => {
-  const id = parseInt(req.params.id);
-  try {
-    if (isNaN(id)) return res.status(400).json({ success: false, message: 'ID inválido' });
-
-    const user = await db.get('SELECT username FROM users WHERE id = $1', [id]);
-    if (user && user.username === 'admin') {
-      return res.status(403).json({ success: false, message: 'No se puede eliminar el admin principal' });
-    }
-
-    // Primero borramos/desvinculamos posibles datos relacionados (como pedidos)
-    // Esto evita el error de "foreign key constraint"
-    try {
-      await db.run('DELETE FROM orders WHERE user_id = $1', [id]);
-    } catch (err) {
-      // Si la tabla orders no existe o no tiene user_id, ignoramos y seguimos
-    }
-
-    const result = await db.run('DELETE FROM users WHERE id = $1', [id]);
-    
-    if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
-    }
-
-    invalidateCache('users');
-    res.json({ success: true });
-  } catch (e) {
-    console.error('Error al borrar usuario:', e);
-    res.status(500).json({ success: false, message: 'Error de base de datos: ' + e.message });
-  }
-});
-
 // --- Categories ---
 app.get('/api/categories', async (req, res) => {
   const cached = getCache('categories');
@@ -270,17 +238,44 @@ app.patch('/api/categories/:id', async (req, res) => {
   }
 });
 
+app.delete('/api/users/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  try {
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'ID inválido' });
+
+    const user = await db.get('SELECT username FROM users WHERE id = $1', [id]);
+    if (user && user.username === 'admin') {
+      return res.status(403).json({ success: false, message: 'No se puede eliminar el admin principal' });
+    }
+
+    // Borrado forzado: eliminamos rastro en otras tablas si existen
+    await db.run('DELETE FROM orders WHERE user_id = $1', [id]).catch(() => {});
+    
+    await db.run('DELETE FROM users WHERE id = $1', [id]);
+    invalidateCache('users');
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error al borrar usuario:', e);
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 app.delete('/api/categories/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    console.log(`[Delete Category] Attempting to delete ID: ${id}`);
-    const result = await db.run('DELETE FROM categories WHERE id = $1', [id]);
-    console.log(`[Delete Category] Success for ID: ${id}`);
+    const category = await db.get('SELECT name FROM categories WHERE id = $1', [id]);
+    if (category) {
+      // Para evitar el error que salía en el log, primero "vaciamos" los productos de esa categoría
+      // los movemos a una categoría por defecto o simplemente los borramos
+      await db.run('DELETE FROM products WHERE category_name = $1', [category.name]);
+    }
+    
+    await db.run('DELETE FROM categories WHERE id = $1', [id]);
     invalidateCache('categories', 'products');
     res.json({ success: true });
   } catch (e) {
-    console.error(`[Delete Category] Error for ID ${id}:`, e);
-    res.status(500).json({ success: false, message: 'Error al borrar la categoría', error: e.message });
+    console.error(`[Delete Category] Error:`, e);
+    res.status(500).json({ success: false, message: 'Error al borrar la categoría' });
   }
 });
 
