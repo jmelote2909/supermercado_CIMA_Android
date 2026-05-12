@@ -582,13 +582,18 @@ const PORT = process.env.PORT || 3000;
 
     console.log('Database initialized');
 
-    app.listen(PORT, '0.0.0.0', () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`Servidor iniciado con éxito.`);
       console.log(`Acceso local: http://localhost:${PORT}`);
-      console.log(`Acceso red: http://10.198.37.158:${PORT} (Verifica tu IP con ipconfig)`);
+      console.log(`Acceso red: http://192.168.10.208:${PORT}`);
     });
+
+    // Optimización Pro: Mantener la conexión abierta con la tablet
+    // Esto evita que el servidor intente "presentarse" (DNS) en cada clic.
+    server.keepAliveTimeout = 3600000; // 1 hora
+    server.headersTimeout = 3601000;
+    
   } catch (error) {
     console.error('Error during initialization:', error);
-    // No salimos del proceso para que PM2 pueda mantenerlo vivo y podamos ver logs
   }
 })();
