@@ -80,6 +80,15 @@ export default function ShopScreen() {
 
   const renderProduct = ({ item }) => (
     <View style={styles.productCard}>
+      {item.image ? (
+        <Image source={{ uri: item.image }} style={styles.productImage} />
+      ) : (
+        <View style={styles.productImage}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E5E7EB' }}>
+            <MaterialCommunityIcons name="package-variant" size={40} color="#9CA3AF" />
+          </View>
+        </View>
+      )}
       <View style={styles.productInfo}>
         <Text style={styles.productName}>{item.name}</Text>
         <Text style={styles.productCategory}>{item.category_name}</Text>

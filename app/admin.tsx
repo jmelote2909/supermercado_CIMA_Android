@@ -28,6 +28,7 @@ export default function AdminScreen() {
   
   const [productName, setProductName] = useState('');
   const [productCategory, setProductCategory] = useState('');
+  const [productImage, setProductImage] = useState('');
   const [isPickerVisible, setPickerVisible] = useState(false);
 
   useEffect(() => {
@@ -273,11 +274,12 @@ export default function AdminScreen() {
       await fetch(url, {
         method,
         headers: getHeaders(),
-        body: JSON.stringify({ name: productName, category_name: productCategory })
+        body: JSON.stringify({ name: productName, category_name: productCategory, image: productImage })
       });
       alert(editingProductId ? `Producto "${productName}" actualizado.` : `Producto "${productName}" añadido.`);
       setProductName('');
       setProductCategory('');
+      setProductImage('');
       setEditingProductId(null);
       fetchData();
     }
@@ -320,11 +322,23 @@ export default function AdminScreen() {
   const handleEditProduct = (prod) => {
     setProductName(prod.name);
     setProductCategory(prod.category_name);
+    setProductImage(prod.image);
     setEditingProductId(prod.id);
   };
 
   const pickImage = async () => {
-    // Imágenes desactivadas
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.4, 
+      base64: true,
+      allowsMultipleSelection: false,
+    });
+
+    if (!result.canceled) {
+      setProductImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
   };
 
   if (loading) {
@@ -500,6 +514,17 @@ export default function AdminScreen() {
             </Text>
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+            {productImage ? (
+              <Image source={{ uri: productImage }} style={styles.previewImage} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <MaterialCommunityIcons name="camera-plus" size={32} color="#9CA3AF" />
+                <Text style={{ color: '#9CA3AF', marginTop: 8 }}>Añadir foto del producto</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity style={[styles.button, { backgroundColor: '#8B5CF6', flex: 1 }]} onPress={handleAddProduct}>
               <Text style={styles.buttonText}>{editingProductId ? 'Actualizar' : 'Añadir Producto'}</Text>
@@ -511,6 +536,7 @@ export default function AdminScreen() {
                   setEditingProductId(null); 
                   setProductName(''); 
                   setProductCategory(''); 
+                  setProductImage(''); 
                 }}
               >
                 <Text style={styles.buttonText}>X</Text>

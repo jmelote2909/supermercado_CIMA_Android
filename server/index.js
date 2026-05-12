@@ -280,9 +280,9 @@ app.get('/api/products', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-  const { name, category_name } = req.body;
+  const { name, category_name, image } = req.body;
   try {
-    await db.run('INSERT INTO products (name, category_name) VALUES ($1, $2)', [name, category_name]);
+    await db.run('INSERT INTO products (name, category_name, image) VALUES ($1, $2, $3)', [name, category_name, image]);
     invalidateCache('products');
     res.json({ success: true });
   } catch (e) {
@@ -292,9 +292,9 @@ app.post('/api/products', async (req, res) => {
 });
 
 app.patch('/api/products/:id', async (req, res) => {
-  const { name, category_name } = req.body;
+  const { name, category_name, image } = req.body;
   try {
-    await db.run('UPDATE products SET name = $1, category_name = $2 WHERE id = $3', [name, category_name, req.params.id]);
+    await db.run('UPDATE products SET name = $1, category_name = $2, image = $3 WHERE id = $4', [name, category_name, image, req.params.id]);
     invalidateCache('products');
     res.json({ success: true });
   } catch (e) {
