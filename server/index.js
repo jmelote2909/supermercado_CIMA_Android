@@ -27,9 +27,9 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'supermercado_cima',
   password: process.env.DB_PASSWORD || 'postgres',
   port: process.env.DB_PORT || 5432,
-  max: 10,                        // Bajamos a 10 para asegurar que todas estén calientes
-  idleTimeoutMillis: 0,           // IMPORTANTE: No cerrar nunca conexiones inactivas
-  connectionTimeoutMillis: 10000,
+  max: 25,                        // Subimos a 25 para tener margen de sobra
+  idleTimeoutMillis: 0,           // Nunca cerrar
+  connectionTimeoutMillis: 20000, // Darle tiempo a esos 9 segundos si ocurren
   keepAlive: true,                
   keepAliveInitialDelayMillis: 10000,
 });
@@ -495,12 +495,12 @@ const PORT = process.env.PORT || 3000;
     await pool.query('SELECT NOW()');
     console.log('PostgreSQL connected');
 
-    // Pre-calentar el pool de forma no crítica: Abrimos las 10 conexiones del tirón
+    // Pre-calentar el pool: Abrimos 25 conexiones del tirón
     try {
-      console.log('Pre-warming connection pool (10 connections)...');
-      const prewarmQueries = Array.from({ length: 10 }, () => pool.query('SELECT 1'));
+      console.log('Pre-warming connection pool (25 connections)...');
+      const prewarmQueries = Array.from({ length: 25 }, () => pool.query('SELECT 1'));
       await Promise.all(prewarmQueries);
-      console.log('Connection pool is fully warm and permanent.');
+      console.log('Connection pool is fully warm (25/25 connections ready).');
     } catch (prewarmErr) {
       console.warn('Pre-warming failed:', prewarmErr.message);
     }

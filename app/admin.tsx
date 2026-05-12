@@ -300,9 +300,10 @@ export default function AdminScreen() {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.5, // Reducimos calidad para que no pese tanto en la DB
+      aspect: [1, 1],
+      quality: 0.4, // Reducimos un poco más la calidad
       base64: true,
+      allowsMultipleSelection: false,
     });
 
     if (!result.canceled) {
