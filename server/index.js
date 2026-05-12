@@ -215,11 +215,25 @@ app.delete('/api/users/:id', async (req, res) => {
       return res.status(403).json({ success: false, message: 'No se puede eliminar el admin principal' });
     }
 
-    await db.run('DELETE FROM users WHERE id = $1', [id]);
+    // Primero borramos/desvinculamos posibles datos relacionados (como pedidos)
+    // Esto evita el error de "foreign key constraint"
+    try {
+      await db.run('DELETE FROM orders WHERE user_id = $1', [id]);
+    } catch (err) {
+      // Si la tabla orders no existe o no tiene user_id, ignoramos y seguimos
+    }
+
+    const result = await db.run('DELETE FROM users WHERE id = $1', [id]);
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    }
+
     invalidateCache('users');
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ success: false, message: e.message });
+    console.error('Error al borrar usuario:', e);
+    res.status(500).json({ success: false, message: 'Error de base de datos: ' + e.message });
   }
 });
 

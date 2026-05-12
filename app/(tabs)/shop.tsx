@@ -120,9 +120,6 @@ export default function ShopScreen() {
           <Text style={{ fontSize: 24, fontWeight: '800', color: '#1F2937' }}>CIMA</Text>
           {currentUser ? <Text style={{ color: '#10B981', fontSize: 14 }}>Hola, {currentUser}</Text> : null}
         </View>
-        <TouchableOpacity onPress={() => router.replace('/')}>
-          <MaterialCommunityIcons name="logout" size={24} color="#EF4444" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.categoryContainer}>
