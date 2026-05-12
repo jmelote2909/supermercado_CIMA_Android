@@ -619,13 +619,15 @@ export default function AdminScreen() {
                   <Text style={styles.userRole}>{user.role}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 5 }}>
-                  <TouchableOpacity onPress={() => handleEditUser(user)} style={styles.actionBtn}>
-                    <MaterialCommunityIcons name="pencil" size={18} color="#3B82F6" />
-                  </TouchableOpacity>
-                  {user.username !== 'admin' && (
-                    <TouchableOpacity onPress={() => handleDeleteUser(user.id)} style={styles.actionBtn}>
-                      <MaterialCommunityIcons name="trash-can" size={18} color="#EF4444" />
-                    </TouchableOpacity>
+                  {user.id !== currentUser?.id && (
+                    <>
+                      <TouchableOpacity onPress={() => handleEditUser(user)} style={styles.actionBtn}>
+                        <MaterialCommunityIcons name="pencil" size={18} color="#3B82F6" />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleDeleteUser(user.id)} style={styles.actionBtn}>
+                        <MaterialCommunityIcons name="trash-can" size={18} color="#EF4444" />
+                      </TouchableOpacity>
+                    </>
                   )}
                 </View>
               </View>
