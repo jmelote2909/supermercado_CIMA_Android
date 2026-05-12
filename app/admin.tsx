@@ -11,6 +11,7 @@ export default function AdminScreen() {
   const [targetEmail, setTargetEmail] = useState('');
   const [newUserUsername, setNewUserUsername] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('User');
   const [editingUserId, setEditingUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [adminUsername, setAdminUsername] = useState('admin');
@@ -131,7 +132,7 @@ export default function AdminScreen() {
               'Content-Type': 'application/json',
               'bypass-tunnel-reminder': 'true'
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password, role: newUserRole })
           });
           const data = await res.json();
           if (!data.success) throw new Error(data.message);
@@ -143,7 +144,7 @@ export default function AdminScreen() {
               'Content-Type': 'application/json',
               'bypass-tunnel-reminder': 'true'
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password, role: newUserRole })
           });
           const data = await res.json();
           if (!data.success) throw new Error(data.message);
@@ -159,7 +160,8 @@ export default function AdminScreen() {
 
   const handleEditUser = (user) => {
     setNewUserUsername(user.username);
-    setNewUserPassword(''); // Dejar vacío para no cambiarla a menos que se escriba algo
+    setNewUserPassword(''); 
+    setNewUserRole(user.role || 'User');
     setEditingUserId(user.id);
   };
 
@@ -601,6 +603,16 @@ export default function AdminScreen() {
             />
           </View>
 
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, gap: 10 }}>
+            <Text style={{ color: '#4B5563' }}>Rol:</Text>
+            <TouchableOpacity 
+              onPress={() => setNewUserRole(newUserRole === 'Admin' ? 'User' : 'Admin')}
+              style={[styles.actionBtn, { backgroundColor: newUserRole === 'Admin' ? '#3B82F6' : '#9CA3AF', width: 80, height: 35, borderRadius: 8 }]}
+            >
+              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, textAlign: 'center' }}>{newUserRole}</Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity style={[styles.button, styles.buttonBlue, { flex: 1 }]} onPress={handleAddUser}>
               <Text style={styles.buttonText}>{editingUserId ? 'Actualizar' : 'Crear Usuario'}</Text>
@@ -608,7 +620,7 @@ export default function AdminScreen() {
             {editingUserId && (
               <TouchableOpacity 
                 style={[styles.button, { backgroundColor: '#6B7280', paddingHorizontal: 15 }]} 
-                onPress={() => { setEditingUserId(null); setNewUserUsername(''); setNewUserPassword(''); }}
+                onPress={() => { setEditingUserId(null); setNewUserUsername(''); setNewUserPassword(''); setNewUserRole('User'); }}
               >
                 <Text style={styles.buttonText}>X</Text>
               </TouchableOpacity>
