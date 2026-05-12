@@ -627,7 +627,7 @@ export default function AdminScreen() {
                   <TouchableOpacity onPress={() => handleEditUser(user)} style={styles.actionBtn}>
                     <MaterialCommunityIcons name="pencil" size={18} color="#3B82F6" />
                   </TouchableOpacity>
-                  {user.role !== 'Admin' && (
+                  {user.username !== 'admin' && (
                     <TouchableOpacity onPress={() => handleDeleteUser(user.id)} style={styles.actionBtn}>
                       <MaterialCommunityIcons name="trash-can" size={18} color="#EF4444" />
                     </TouchableOpacity>

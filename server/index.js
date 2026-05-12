@@ -178,7 +178,7 @@ app.post('/api/users', async (req, res) => {
   const { username, password, role } = req.body;
   try {
     const hashedPass = await bcrypt.hash(password, 10);
-    await db.run('INSERT INTO users (username, password, role) VALUES ($1, $2, $3)', [username, hashedPass, role || 'User']);
+    await db.run('INSERT INTO users (username, password, role) VALUES ($1, $2, $3)', [username, hashedPass, 'User']);
     invalidateCache('users');
     res.json({ success: true });
   } catch (e) {
@@ -206,9 +206,21 @@ app.patch('/api/users/:id', async (req, res) => {
 });
 
 app.delete('/api/users/:id', async (req, res) => {
-  await db.run('DELETE FROM users WHERE id = $1', [req.params.id]);
-  invalidateCache('users');
-  res.json({ success: true });
+  const id = parseInt(req.params.id);
+  try {
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'ID inválido' });
+
+    const user = await db.get('SELECT username FROM users WHERE id = $1', [id]);
+    if (user && user.username === 'admin') {
+      return res.status(403).json({ success: false, message: 'No se puede eliminar el admin principal' });
+    }
+
+    await db.run('DELETE FROM users WHERE id = $1', [id]);
+    invalidateCache('users');
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
 });
 
 // --- Categories ---
@@ -241,26 +253,6 @@ app.patch('/api/categories/:id', async (req, res) => {
   } catch (e) {
     console.error('Error updating category:', e);
     res.status(400).json({ success: false, message: 'Error al actualizar categoría' });
-  }
-});
-
-app.delete('/api/users/:id', async (req, res) => {
-  const id = parseInt(req.params.id); // Asegurar que sea un número para PostgreSQL
-  try {
-    if (isNaN(id)) {
-      return res.status(400).json({ success: false, message: 'ID de usuario inválido' });
-    }
-
-    const user = await db.get('SELECT username FROM users WHERE id = $1', [id]);
-    if (user && user.username === 'admin') {
-      return res.status(403).json({ success: false, message: 'No se puede eliminar el administrador principal' });
-    }
-
-    await db.run('DELETE FROM users WHERE id = $1', [id]);
-    res.json({ success: true });
-  } catch (e) {
-    console.error('Error deleting user:', e);
-    res.status(500).json({ success: false, message: e.message });
   }
 });
 
