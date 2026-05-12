@@ -218,10 +218,10 @@ export default function AdminScreen() {
           alert(`Error al borrar: ${data.message || 'Error desconocido'}`);
         }
         fetchData();
-      } catch (e) {
-        console.error(`[Admin] Connection error:`, e);
-        alert("Error de conexión al borrar la categoría");
-      }
+      } catch (err) {
+      console.error('[Admin Login] Error:', err);
+      Alert.alert("Error de Conexión", `No se pudo conectar con: ${API_URL}/categories/${id}\n\nDetalle: ${err.message}`);
+    } finally {
     };
 
     if (Platform.OS === 'web') {

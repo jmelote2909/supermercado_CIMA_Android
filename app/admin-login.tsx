@@ -46,7 +46,7 @@ export default function AdminLoginScreen() {
       if (error.name === 'AbortError') {
         alert('Tiempo de espera agotado. El servidor no responde.');
       } else {
-        alert('Error al conectar con el servidor. Verifica tu conexión.');
+        alert(`Error al conectar con: ${API_URL}/admin/login\n\nDetalle: ${error.message}`);
       }
     } finally {
       setLoading(false);
