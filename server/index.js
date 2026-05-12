@@ -434,10 +434,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Catch-all: para rutas de la SPA devolver el HTML correcto de cada ruta.
-// Expo Router genera un .html por ruta (ej: admin.html, shop.html).
-// Express 5 requiere la sintaxis /{*path}
-app.get('*', (req, res) => {
+// Catch-all: Usamos app.use para que capture cualquier ruta no definida arriba (API)
+// Esto evita errores de sintaxis con símbolos como * o (.*)
+app.use((req, res) => {
   const routePath = req.path === '/' ? '/index' : req.path;
   const exactHtml  = path.join(distPath, routePath + '.html');
   const nestedHtml = path.join(distPath, routePath, 'index.html');
