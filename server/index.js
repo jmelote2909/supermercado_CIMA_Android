@@ -245,9 +245,12 @@ app.patch('/api/categories/:id', async (req, res) => {
 });
 
 app.delete('/api/users/:id', async (req, res) => {
-  const { id } = req.params;
+  const id = parseInt(req.params.id); // Asegurar que sea un número para PostgreSQL
   try {
-    // Evitar que se borre el admin principal por error (opcional)
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, message: 'ID de usuario inválido' });
+    }
+
     const user = await db.get('SELECT username FROM users WHERE id = $1', [id]);
     if (user && user.username === 'admin') {
       return res.status(403).json({ success: false, message: 'No se puede eliminar el administrador principal' });
@@ -257,7 +260,7 @@ app.delete('/api/users/:id', async (req, res) => {
     res.json({ success: true });
   } catch (e) {
     console.error('Error deleting user:', e);
-    res.status(500).json({ success: false, message: 'Error al eliminar usuario' });
+    res.status(500).json({ success: false, message: e.message });
   }
 });
 

@@ -167,11 +167,19 @@ export default function AdminScreen() {
     Alert.alert("Eliminar", "¿Seguro?", [
       { text: "No" },
       { text: "Sí", onPress: async () => {
-        await fetch(`${API_URL}/users/${id}`, { 
-          method: 'DELETE',
-          headers: getHeaders(),
-        });
-        fetchData();
+        try {
+          const res = await fetch(`${API_URL}/users/${id}`, { 
+            method: 'DELETE',
+            headers: getHeaders(),
+          });
+          const data = await res.json();
+          if (!data.success) {
+            alert(`Error: ${data.message}`);
+          }
+          fetchData();
+        } catch (err) {
+          alert(`Error de conexión: ${err.message}`);
+        }
       }}
     ]);
   };
