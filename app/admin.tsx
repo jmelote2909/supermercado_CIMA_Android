@@ -27,7 +27,6 @@ export default function AdminScreen() {
   
   const [productName, setProductName] = useState('');
   const [productCategory, setProductCategory] = useState('');
-  const [productImage, setProductImage] = useState('');
   const [isPickerVisible, setPickerVisible] = useState(false);
 
   useEffect(() => {
@@ -254,12 +253,11 @@ export default function AdminScreen() {
       await fetch(url, {
         method,
         headers: getHeaders(),
-        body: JSON.stringify({ name: productName, category_name: productCategory, image: productImage })
+        body: JSON.stringify({ name: productName, category_name: productCategory })
       });
       alert(editingProductId ? `Producto "${productName}" actualizado.` : `Producto "${productName}" añadido.`);
       setProductName('');
       setProductCategory('');
-      setProductImage('');
       setEditingProductId(null);
       fetchData();
     }
@@ -302,24 +300,11 @@ export default function AdminScreen() {
   const handleEditProduct = (prod) => {
     setProductName(prod.name);
     setProductCategory(prod.category_name);
-    setProductImage(prod.image);
     setEditingProductId(prod.id);
   };
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.4, // Reducimos un poco más la calidad
-      base64: true,
-      allowsMultipleSelection: false,
-    });
-
-    if (!result.canceled) {
-      // Guardamos la imagen como Base64 para que se guarde en el SQLite
-      setProductImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
-    }
+    // Imágenes desactivadas
   };
 
   if (loading) {
@@ -412,41 +397,6 @@ export default function AdminScreen() {
           </View>
         </View>
 
-        {/* Admin Credentials Section */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <MaterialCommunityIcons name="shield-lock-outline" size={24} color="#EF4444" />
-            <Text style={styles.cardTitle}>Acceso Panel Admin</Text>
-          </View>
-          <Text style={styles.description}>
-            Cambia el nombre de usuario y contraseña para entrar a este panel.
-          </Text>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Usuario Admin:</Text>
-            <TextInput
-              style={styles.input}
-              value={adminUsername}
-              onChangeText={setAdminUsername}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Nueva Contraseña:</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Dejar en blanco para no cambiar"
-              value={adminPassword}
-              onChangeText={setAdminPassword}
-              secureTextEntry
-            />
-          </View>
-
-          <TouchableOpacity style={[styles.button, { backgroundColor: '#EF4444' }]} onPress={handleUpdateAdminCredentials}>
-            <Text style={styles.buttonText}>Actualizar Acceso Admin</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Categories Section */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -526,17 +476,6 @@ export default function AdminScreen() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
-            {productImage ? (
-              <Image source={{ uri: productImage }} style={styles.previewImage} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <MaterialCommunityIcons name="camera-plus" size={32} color="#9CA3AF" />
-                <Text style={{ color: '#9CA3AF', marginTop: 8 }}>Añadir foto del producto</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity style={[styles.button, { backgroundColor: '#8B5CF6', flex: 1 }]} onPress={handleAddProduct}>
               <Text style={styles.buttonText}>{editingProductId ? 'Actualizar' : 'Añadir Producto'}</Text>
@@ -548,7 +487,6 @@ export default function AdminScreen() {
                   setEditingProductId(null); 
                   setProductName(''); 
                   setProductCategory(''); 
-                  setProductImage(''); 
                 }}
               >
                 <Text style={styles.buttonText}>X</Text>

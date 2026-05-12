@@ -75,7 +75,6 @@ export default function ShopScreen() {
 
   const renderProduct = ({ item }) => (
     <View style={styles.productCard}>
-      <Image source={{ uri: item.image || 'https://via.placeholder.com/150' }} style={styles.productImage} />
       <View style={styles.productInfo}>
         <Text style={styles.productName}>{item.name}</Text>
         <Text style={styles.productCategory}>{item.category_name}</Text>

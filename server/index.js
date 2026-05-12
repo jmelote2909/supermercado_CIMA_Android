@@ -150,15 +150,15 @@ app.post('/api/admin/login', async (req, res, next) => {
     const { username, password } = req.body;
     console.log(`[Admin Login Attempt] User: ${username}`);
 
-    const adminUser = await db.get("SELECT value FROM config WHERE key = 'admin_user'");
-    const adminPass = await db.get("SELECT value FROM config WHERE key = 'admin_pass'");
+    // Buscamos en la tabla de usuarios normales pero filtramos por rol Admin
+    const user = await db.get("SELECT * FROM users WHERE username = $1 AND role = 'Admin'", [username]);
 
-    if (adminUser && adminPass && username === adminUser.value && await bcrypt.compare(password, adminPass.value)) {
+    if (user && await bcrypt.compare(password, user.password)) {
       console.log('[Admin Login] Success');
       res.json({ success: true });
     } else {
       console.warn(`[Admin Login] Failed attempt for user: ${username}`);
-      res.status(401).json({ success: false, message: 'Acceso denegado' });
+      res.status(401).json({ success: false, message: 'Acceso denegado: Usuario no es Admin o credenciales incorrectas' });
     }
   } catch (error) {
     console.error('[Admin Login] Error:', error);
@@ -280,9 +280,9 @@ app.get('/api/products', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-  const { name, category_name, image } = req.body;
+  const { name, category_name } = req.body;
   try {
-    await db.run('INSERT INTO products (name, category_name, image) VALUES ($1, $2, $3)', [name, category_name, image]);
+    await db.run('INSERT INTO products (name, category_name) VALUES ($1, $2)', [name, category_name]);
     invalidateCache('products');
     res.json({ success: true });
   } catch (e) {
@@ -292,9 +292,9 @@ app.post('/api/products', async (req, res) => {
 });
 
 app.patch('/api/products/:id', async (req, res) => {
-  const { name, category_name, image } = req.body;
+  const { name, category_name } = req.body;
   try {
-    await db.run('UPDATE products SET name = $1, category_name = $2, image = $3 WHERE id = $4', [name, category_name, image, req.params.id]);
+    await db.run('UPDATE products SET name = $1, category_name = $2 WHERE id = $3', [name, category_name, req.params.id]);
     invalidateCache('products');
     res.json({ success: true });
   } catch (e) {
