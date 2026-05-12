@@ -336,6 +336,21 @@ export default function AdminScreen() {
           <MaterialCommunityIcons name="arrow-left" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.title}>Panel de Administrador</Text>
+        <TouchableOpacity 
+          onPress={() => router.replace('/')} 
+          style={{ 
+            backgroundColor: '#EF4444', 
+            padding: 8, 
+            borderRadius: 20,
+            width: 40,
+            height: 40,
+            justifyContent: 'center',
+            alignItems: 'center',
+            elevation: 4
+          }}
+        >
+          <MaterialCommunityIcons name="logout" size={22} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>

@@ -426,6 +426,45 @@ app.post('/api/admin/update_credentials', async (req, res) => {
   }
 });
 
+// --- Rutas de Dashboard (API) ---
+app.get('/api/admin/dashboard', async (req, res) => {
+  try {
+    const [users, categories, products, config] = await Promise.all([
+      pool.query('SELECT id, username, role FROM users ORDER BY id DESC'),
+      pool.query('SELECT * FROM categories ORDER BY name ASC'),
+      pool.query('SELECT * FROM products ORDER BY name ASC'),
+      pool.query('SELECT key, value FROM config')
+    ]);
+
+    res.json({
+      success: true,
+      users: users.rows,
+      categories: categories.rows,
+      products: products.rows,
+      config: config.rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {})
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/shop/dashboard', async (req, res) => {
+  try {
+    const [categories, products] = await Promise.all([
+      pool.query('SELECT * FROM categories ORDER BY name ASC'),
+      pool.query('SELECT * FROM products ORDER BY name ASC')
+    ]);
+
+    res.json({
+      success: true,
+      categories: categories.rows,
+      products: products.rows
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Middleware de manejo de errores global
 app.use((err, req, res, next) => {
   console.error('Unhandled Error:', err);
@@ -436,8 +475,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Catch-all: Usamos app.use para que capture cualquier ruta no definida arriba (API)
-// Esto evita errores de sintaxis con símbolos como * o (.*)
+// Catch-all: DEBE IR AL FINAL DE TODO
 app.use((req, res) => {
   const routePath = req.path === '/' ? '/index' : req.path;
   const exactHtml  = path.join(distPath, routePath + '.html');
@@ -448,7 +486,6 @@ app.use((req, res) => {
   } else if (fs.existsSync(nestedHtml)) {
     return res.sendFile(nestedHtml);
   }
-  // Fallback para rutas no encontradas
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
@@ -468,46 +505,6 @@ const PORT = process.env.PORT || 3000;
     } catch (prewarmErr) {
       console.warn('Pre-warming failed (non-critical):', prewarmErr.message);
     }
-
-    // Endpoint Profesional Unificado para el Admin
-    app.get('/api/admin/dashboard', async (req, res) => {
-      try {
-        const [users, categories, products, config] = await Promise.all([
-          pool.query('SELECT id, username, role FROM users ORDER BY id DESC'),
-          pool.query('SELECT * FROM categories ORDER BY name ASC'),
-          pool.query('SELECT * FROM products ORDER BY name ASC'),
-          pool.query('SELECT key, value FROM config')
-        ]);
-
-        res.json({
-          success: true,
-          users: users.rows,
-          categories: categories.rows,
-          products: products.rows,
-          config: config.rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {})
-        });
-      } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-      }
-    });
-
-    // Endpoint Profesional Unificado para la Tienda (Clientes)
-    app.get('/api/shop/dashboard', async (req, res) => {
-      try {
-        const [categories, products] = await Promise.all([
-          pool.query('SELECT * FROM categories ORDER BY name ASC'),
-          pool.query('SELECT * FROM products ORDER BY name ASC')
-        ]);
-
-        res.json({
-          success: true,
-          categories: categories.rows,
-          products: products.rows
-        });
-      } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-      }
-    });
 
     // Heartbeat: mantener las conexiones vivas enviando una consulta mínima cada 30s.
     // Evita que el firewall o el servidor PostgreSQL cierre las conexiones inactivas.

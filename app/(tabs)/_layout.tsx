@@ -40,10 +40,24 @@ export default function TabLayout() {
         headerRight: () => (
           <TouchableOpacity 
             onPress={handleLogout} 
-            style={{ marginRight: 15, padding: 10 }}
+            style={{ 
+              marginRight: 15, 
+              backgroundColor: '#EF4444', 
+              padding: 8, 
+              borderRadius: 20,
+              width: 40,
+              height: 40,
+              justifyContent: 'center',
+              alignItems: 'center',
+              elevation: 4,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+            }}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <MaterialCommunityIcons name="logout" size={24} color="#EF4444" />
+            <MaterialCommunityIcons name="logout" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         ),
         tabBarStyle: {
