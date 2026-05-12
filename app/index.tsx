@@ -107,8 +107,6 @@ export default function LoginScreen() {
                 )}
               </LinearGradient>
             </TouchableOpacity>
-
-            </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
