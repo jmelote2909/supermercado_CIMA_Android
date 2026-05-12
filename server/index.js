@@ -437,7 +437,7 @@ app.use((err, req, res, next) => {
 // Catch-all: para rutas de la SPA devolver el HTML correcto de cada ruta.
 // Expo Router genera un .html por ruta (ej: admin.html, shop.html).
 // Express 5 requiere la sintaxis /{*path}
-app.get('/:path*', (req, res) => {
+app.get('(.*)', (req, res) => {
   const routePath = req.path === '/' ? '/index' : req.path;
   const exactHtml  = path.join(distPath, routePath + '.html');
   const nestedHtml = path.join(distPath, routePath, 'index.html');
@@ -461,7 +461,7 @@ const PORT = process.env.PORT || 3000;
     // Pre-calentar el pool: crear conexiones en paralelo para que la demora de
     // DNS inverso ocurra una sola vez al arrancar, no en cada petición del usuario.
     console.log('Pre-warming connection pool...');
-    const prewarmQueries = Array(15).fill(pool.query('SELECT 1'));
+    const prewarmQueries = Array.from({ length: 15 }, () => pool.query('SELECT 1'));
     await Promise.all(prewarmQueries);
     console.log('Connection pool pre-warmed (15 connections ready)');
 
