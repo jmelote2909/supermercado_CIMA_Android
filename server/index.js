@@ -1,6 +1,7 @@
 //akujtfvynymqsvmx
 require('dotenv').config();
 const express = require('express');
+const compression = require('compression');
 const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
@@ -10,6 +11,7 @@ const bcrypt = require('bcryptjs');
 
 
 const app = express();
+app.use(compression()); // Compresión Gzip para todas las respuestas
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -466,6 +468,46 @@ const PORT = process.env.PORT || 3000;
     } catch (prewarmErr) {
       console.warn('Pre-warming failed (non-critical):', prewarmErr.message);
     }
+
+    // Endpoint Profesional Unificado para el Admin
+    app.get('/api/admin/dashboard', async (req, res) => {
+      try {
+        const [users, categories, products, config] = await Promise.all([
+          pool.query('SELECT id, username, role FROM users ORDER BY id DESC'),
+          pool.query('SELECT * FROM categories ORDER BY name ASC'),
+          pool.query('SELECT * FROM products ORDER BY name ASC'),
+          pool.query('SELECT key, value FROM config')
+        ]);
+
+        res.json({
+          success: true,
+          users: users.rows,
+          categories: categories.rows,
+          products: products.rows,
+          config: config.rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {})
+        });
+      } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+      }
+    });
+
+    // Endpoint Profesional Unificado para la Tienda (Clientes)
+    app.get('/api/shop/dashboard', async (req, res) => {
+      try {
+        const [categories, products] = await Promise.all([
+          pool.query('SELECT * FROM categories ORDER BY name ASC'),
+          pool.query('SELECT * FROM products ORDER BY name ASC')
+        ]);
+
+        res.json({
+          success: true,
+          categories: categories.rows,
+          products: products.rows
+        });
+      } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+      }
+    });
 
     // Heartbeat: mantener las conexiones vivas enviando una consulta mínima cada 30s.
     // Evita que el firewall o el servidor PostgreSQL cierre las conexiones inactivas.

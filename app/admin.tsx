@@ -35,23 +35,22 @@ export default function AdminScreen() {
 
   const fetchData = async () => {
     try {
-      const [uRes, cRes, prRes, configRes] = await Promise.all([
-        fetch(`${API_URL}/users`, { headers: getHeaders(), }),
-        fetch(`${API_URL}/categories`, { headers: getHeaders(), }),
-        fetch(`${API_URL}/products`, { headers: getHeaders(), }),
-        fetch(`${API_URL}/config-all`, { headers: getHeaders(), })
-      ]);
-      const [uData, cData, prData, configData] = await Promise.all([
-        uRes.json(), cRes.json(), prRes.json(), configRes.json()
-      ]);
-      setUsers(uData);
-      setCategories(cData);
-      setProducts(prData);
-      setSmtpPassword(configData.smtp_pass || '');
-      setTargetEmail(configData.target_email || '');
-      setAdminUsername(configData.admin_user || 'admin');
+      const res = await fetch(`${API_URL}/admin/dashboard`, { headers: getHeaders() });
+      const data = await res.json();
+      
+      if (data.success) {
+        setUsers(data.users);
+        setCategories(data.categories);
+        setProducts(data.products);
+        
+        // Mapear configuración
+        const cfg = data.config;
+        setAdminUsername(cfg.admin_user || 'admin');
+        setTargetEmail(cfg.target_email || '');
+        setSmtpPassword(cfg.smtp_pass || '');
+      }
     } catch (e) {
-      alert('Error conectando con el servidor');
+      alert(`Error conectando con el servidor: ${e.message}`);
     } finally {
       setLoading(false);
     }

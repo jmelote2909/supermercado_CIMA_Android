@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, SafeAreaView
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../../constants/API';
+import { API_URL, getHeaders } from '../../constants/API';
 
 const { width } = Dimensions.get('window');
 
@@ -28,13 +28,12 @@ export default function ShopScreen() {
 
   const fetchData = async () => {
     try {
-      const [pRes, cRes] = await Promise.all([
-        fetch(`${API_URL}/products`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
-        fetch(`${API_URL}/categories`, { headers: { 'bypass-tunnel-reminder': 'true' } })
-      ]);
-      const [pData, cData] = await Promise.all([pRes.json(), cRes.json()]);
-      setProducts(pData);
-      setCategories(['Todos', ...cData.map(c => c.name)]);
+      const res = await fetch(`${API_URL}/shop/dashboard`, { headers: getHeaders() });
+      const data = await res.json();
+      if (data.success) {
+        setProducts(data.products);
+        setCategories(['Todos', ...data.categories.map(c => c.name)]);
+      }
     } catch (e) {
       alert('Error cargando datos');
     } finally {
@@ -58,10 +57,7 @@ export default function ShopScreen() {
     try {
       await fetch(`${API_URL}/orders`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'bypass-tunnel-reminder': 'true'
-        },
+        headers: getHeaders(),
         body: JSON.stringify({
           username: currentUser || 'Usuario', 
           items: cart,
