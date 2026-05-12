@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Modal, FlatList, Alert, ActivityIndicator, Image, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { API_URL, getHeaders } from '../constants/API';
@@ -30,8 +31,26 @@ export default function AdminScreen() {
   const [isPickerVisible, setPickerVisible] = useState(false);
 
   useEffect(() => {
+    checkAdminAccess();
     fetchData();
   }, []);
+
+  const checkAdminAccess = async () => {
+    try {
+      const userJson = await AsyncStorage.getItem('user');
+      if (!userJson) {
+        router.replace('/'); // No hay usuario, fuera
+        return;
+      }
+      const user = JSON.parse(userJson);
+      if (user.role !== 'Admin') {
+        alert('Acceso denegado: Se requiere rol de Administrador');
+        router.replace('/'); // No es admin, fuera
+      }
+    } catch (e) {
+      router.replace('/');
+    }
+  };
 
   const fetchData = async () => {
     try {
