@@ -359,6 +359,14 @@ export default function AdminScreen() {
         </View>
         <TouchableOpacity 
           onPress={() => router.replace('/')} 
+          style={{ 
+            backgroundColor: '#EF4444', 
+            padding: 8, 
+            borderRadius: 20,
+            width: 40,
+            height: 40,
+            justifyContent: 'center',
+            alignItems: 'center'
           }}
         >
           <MaterialCommunityIcons name="logout" size={22} color="#FFFFFF" />
