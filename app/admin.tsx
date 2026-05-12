@@ -186,24 +186,33 @@ export default function AdminScreen() {
   };
 
   const handleDeleteUser = async (id) => {
-    Alert.alert("Eliminar", "¿Seguro?", [
-      { text: "No" },
-      { text: "Sí", onPress: async () => {
-        try {
-          const res = await fetch(`${API_URL}/users/${id}`, { 
-            method: 'DELETE',
-            headers: getHeaders(),
-          });
-          const data = await res.json();
-          if (!data.success) {
-            alert(`Error: ${data.message}`);
-          }
+    const performDelete = async () => {
+      try {
+        const res = await fetch(`${API_URL}/users/${id}`, { 
+          method: 'DELETE',
+          headers: getHeaders(),
+        });
+        const data = await res.json();
+        if (data.success) {
           fetchData();
-        } catch (err) {
-          alert(`Error de conexión: ${err.message}`);
+        } else {
+          alert(`Error: ${data.message}`);
         }
-      }}
-    ]);
+      } catch (err) {
+        alert(`Error de conexión: ${err.message}`);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm("¿Seguro que quieres eliminar este usuario?")) {
+        performDelete();
+      }
+    } else {
+      Alert.alert("Eliminar", "¿Seguro que quieres eliminar este usuario?", [
+        { text: "No" },
+        { text: "Sí", onPress: performDelete }
+      ]);
+    }
   };
 
   const handleAddCategory = async () => {
