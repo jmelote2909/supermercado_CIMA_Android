@@ -31,8 +31,14 @@ export default function LoginScreen() {
       const data = await response.json();
       
       if (data.success) {
-        await AsyncStorage.setItem('username', username);
-        router.replace('/(tabs)/shop');
+        // Guardamos el objeto usuario completo (incluyendo rol y nombre)
+        await AsyncStorage.setItem('user', JSON.stringify(data.user));
+        
+        if (data.user.role === 'Admin') {
+          router.replace('/admin');
+        } else {
+          router.replace('/(tabs)/shop');
+        }
       } else {
         alert(data.message || 'Error al iniciar sesión');
       }
@@ -102,10 +108,6 @@ export default function LoginScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.adminLink} onPress={() => {
-              router.push('/admin-login');
-            }}>
-              <Text style={styles.adminText}>Acceso Administrador</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>

@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator, Modal } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL, getHeaders } from '../../constants/API';
 
 const { width } = Dimensions.get('window');
 
 export default function ShopScreen() {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [cart, setCart] = useState([]);
   const [products, setProducts] = useState([]);
@@ -22,8 +24,11 @@ export default function ShopScreen() {
   }, []);
 
   const loadUser = async () => {
-    const user = await AsyncStorage.getItem('username');
-    if (user) setCurrentUser(user);
+    const userJson = await AsyncStorage.getItem('user');
+    if (userJson) {
+      const user = JSON.parse(userJson);
+      setCurrentUser(user.username);
+    }
   };
 
   const fetchData = async () => {
@@ -92,6 +97,25 @@ export default function ShopScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={{ 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        paddingHorizontal: 20, 
+        paddingVertical: 15, 
+        backgroundColor: '#FFFFFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB'
+      }}>
+        <View>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1F2937' }}>CIMA</Text>
+          {currentUser ? <Text style={{ color: '#10B981', fontSize: 14 }}>Hola, {currentUser}</Text> : null}
+        </View>
+        <TouchableOpacity onPress={() => router.replace('/')}>
+          <MaterialCommunityIcons name="logout" size={24} color="#EF4444" />
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.categoryContainer}>
         <FlatList
           horizontal

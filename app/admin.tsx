@@ -18,7 +18,7 @@ export default function AdminScreen() {
   const [adminUsername, setAdminUsername] = useState('admin');
   const [adminPassword, setAdminPassword] = useState('');
 
-  // Estados reales vinculados a la DB
+  const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -43,6 +43,7 @@ export default function AdminScreen() {
         return;
       }
       const user = JSON.parse(userJson);
+      setCurrentUser(user);
       if (user.role !== 'Admin') {
         alert('Acceso denegado: Se requiere rol de Administrador');
         router.replace('/'); // No es admin, fuera
@@ -350,18 +351,14 @@ export default function AdminScreen() {
         >
           <MaterialCommunityIcons name="arrow-left" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.title}>Panel de Administrador</Text>
+        <View>
+          <Text style={styles.title}>Panel de Administrador</Text>
+          {currentUser && (
+            <Text style={{ color: '#6B7280', fontSize: 14 }}>Hola, {currentUser.username}</Text>
+          )}
+        </View>
         <TouchableOpacity 
           onPress={() => router.replace('/')} 
-          style={{ 
-            backgroundColor: '#EF4444', 
-            padding: 8, 
-            borderRadius: 20,
-            width: 40,
-            height: 40,
-            justifyContent: 'center',
-            alignItems: 'center',
-            elevation: 4
           }}
         >
           <MaterialCommunityIcons name="logout" size={22} color="#FFFFFF" />
