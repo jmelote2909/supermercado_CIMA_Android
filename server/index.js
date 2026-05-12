@@ -437,7 +437,7 @@ app.use((err, req, res, next) => {
 // Catch-all: para rutas de la SPA devolver el HTML correcto de cada ruta.
 // Expo Router genera un .html por ruta (ej: admin.html, shop.html).
 // Express 5 requiere la sintaxis /{*path}
-app.get('(.*)', (req, res) => {
+app.get('*', (req, res) => {
   const routePath = req.path === '/' ? '/index' : req.path;
   const exactHtml  = path.join(distPath, routePath + '.html');
   const nestedHtml = path.join(distPath, routePath, 'index.html');
@@ -458,12 +458,15 @@ const PORT = process.env.PORT || 3000;
     await pool.query('SELECT NOW()');
     console.log('PostgreSQL connected');
 
-    // Pre-calentar el pool: crear conexiones en paralelo para que la demora de
-    // DNS inverso ocurra una sola vez al arrancar, no en cada petición del usuario.
-    console.log('Pre-warming connection pool...');
-    const prewarmQueries = Array.from({ length: 15 }, () => pool.query('SELECT 1'));
-    await Promise.all(prewarmQueries);
-    console.log('Connection pool pre-warmed (15 connections ready)');
+    // Pre-calentar el pool de forma no crítica
+    try {
+      console.log('Pre-warming connection pool (8 connections)...');
+      const prewarmQueries = Array.from({ length: 8 }, () => pool.query('SELECT 1'));
+      await Promise.all(prewarmQueries);
+      console.log('Connection pool pre-warmed.');
+    } catch (prewarmErr) {
+      console.warn('Pre-warming failed (non-critical):', prewarmErr.message);
+    }
 
     // Heartbeat: mantener las conexiones vivas enviando una consulta mínima cada 30s.
     // Evita que el firewall o el servidor PostgreSQL cierre las conexiones inactivas.
@@ -548,7 +551,7 @@ const PORT = process.env.PORT || 3000;
       console.log(`Acceso red: http://10.198.37.158:${PORT} (Verifica tu IP con ipconfig)`);
     });
   } catch (error) {
-    console.error('Critical Error during initialization:', error);
-    process.exit(1);
+    console.error('Error during initialization:', error);
+    // No salimos del proceso para que PM2 pueda mantenerlo vivo y podamos ver logs
   }
 })();
