@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../constants/API';
+import { API_URL, getHeaders } from '../constants/API';
 
 const { width } = Dimensions.get('window');
 
@@ -24,10 +24,7 @@ export default function LoginScreen() {
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'bypass-tunnel-reminder': 'true'
-        },
+        headers: getHeaders(),
         body: JSON.stringify({ username: username.trim(), password: password.trim() })
       });
       
@@ -40,7 +37,7 @@ export default function LoginScreen() {
         alert(data.message || 'Error al iniciar sesión');
       }
     } catch (error) {
-      alert('No se pudo conectar con el servidor');
+      alert(`No se pudo conectar con: ${API_URL}/login\n\nDetalle: ${error.message}`);
     } finally {
       setLoading(false);
     }

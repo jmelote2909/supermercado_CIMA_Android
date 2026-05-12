@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Scro
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { API_URL } from '../constants/API';
+import { API_URL, getHeaders } from '../constants/API';
 
 export default function AdminScreen() {
   const router = useRouter();
@@ -36,10 +36,10 @@ export default function AdminScreen() {
   const fetchData = async () => {
     try {
       const [uRes, cRes, prRes, configRes] = await Promise.all([
-        fetch(`${API_URL}/users`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
-        fetch(`${API_URL}/categories`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
-        fetch(`${API_URL}/products`, { headers: { 'bypass-tunnel-reminder': 'true' } }),
-        fetch(`${API_URL}/config-all`, { headers: { 'bypass-tunnel-reminder': 'true' } })
+        fetch(`${API_URL}/users`, { headers: getHeaders(), }),
+        fetch(`${API_URL}/categories`, { headers: getHeaders(), }),
+        fetch(`${API_URL}/products`, { headers: getHeaders(), }),
+        fetch(`${API_URL}/config-all`, { headers: getHeaders(), })
       ]);
       const [uData, cData, prData, configData] = await Promise.all([
         uRes.json(), cRes.json(), prRes.json(), configRes.json()
@@ -63,7 +63,7 @@ export default function AdminScreen() {
     try {
       const res = await fetch(`${API_URL}/config/test_email`, {
         method: 'POST',
-        headers: { 'bypass-tunnel-reminder': 'true' }
+        headers: getHeaders(),
       });
       const data = await res.json();
       if (data.success) {
@@ -107,10 +107,7 @@ export default function AdminScreen() {
     try {
       const res = await fetch(`${API_URL}/admin/update_credentials`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'bypass-tunnel-reminder': 'true'
-        },
+        headers: getHeaders(),
         body: JSON.stringify({ username: adminUsername, password: adminPassword })
       });
       const data = await res.json();
@@ -173,7 +170,7 @@ export default function AdminScreen() {
       { text: "Sí", onPress: async () => {
         await fetch(`${API_URL}/users/${id}`, { 
           method: 'DELETE',
-          headers: { 'bypass-tunnel-reminder': 'true' }
+          headers: getHeaders(),
         });
         fetchData();
       }}
@@ -210,7 +207,7 @@ export default function AdminScreen() {
         console.log(`[Admin] Sending DELETE request for category ${id}`);
         const res = await fetch(`${API_URL}/categories/${id}`, { 
           method: 'DELETE',
-          headers: { 'bypass-tunnel-reminder': 'true' }
+          headers: getHeaders(),
         });
         const data = await res.json();
         console.log(`[Admin] Server response:`, data);
@@ -247,10 +244,7 @@ export default function AdminScreen() {
       const method = editingProductId ? 'PATCH' : 'POST';
       await fetch(url, {
         method,
-        headers: { 
-          'Content-Type': 'application/json',
-          'bypass-tunnel-reminder': 'true'
-        },
+        headers: getHeaders(),
         body: JSON.stringify({ name: productName, category_name: productCategory, image: productImage })
       });
       alert(editingProductId ? `Producto "${productName}" actualizado.` : `Producto "${productName}" añadido.`);
@@ -270,7 +264,7 @@ export default function AdminScreen() {
         console.log(`[Admin] Sending DELETE request for product ${id}`);
         const res = await fetch(`${API_URL}/products/${id}`, { 
           method: 'DELETE',
-          headers: { 'bypass-tunnel-reminder': 'true' }
+          headers: getHeaders(),
         });
         const data = await res.json();
         console.log(`[Admin] Server response:`, data);

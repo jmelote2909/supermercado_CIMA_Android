@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { API_URL } from '../constants/API';
+import { API_URL, getHeaders } from '../constants/API';
 
 const { width } = Dimensions.get('window');
 
@@ -24,12 +24,10 @@ export default function AdminLoginScreen() {
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos de timeout
 
     try {
+
       const res = await fetch(`${API_URL}/admin/login`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'bypass-tunnel-reminder': 'true'
-        },
+        headers: getHeaders(),
         body: JSON.stringify({ username: email.trim(), password: password.trim() }),
         signal: controller.signal
       });
