@@ -219,9 +219,9 @@ export default function AdminScreen() {
         }
         fetchData();
       } catch (err) {
-      console.error('[Admin Login] Error:', err);
-      Alert.alert("Error de Conexión", `No se pudo conectar con: ${API_URL}/categories/${id}\n\nDetalle: ${err.message}`);
-    } finally {
+        console.error(`[Admin] Error:`, err);
+        Alert.alert("Error", `Detalle: ${err.message}`);
+      }
     };
 
     if (Platform.OS === 'web') {
