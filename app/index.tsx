@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, StyleSheet, 
-  KeyboardAvoidingView, Platform, Dimensions, SafeAreaView, ActivityIndicator
+  KeyboardAvoidingView, Platform, useWindowDimensions, SafeAreaView, ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,9 +9,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL, getHeaders } from '../constants/API';
 
-const { width } = Dimensions.get('window');
-
 export default function LoginScreen() {
+  const { width } = useWindowDimensions();
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

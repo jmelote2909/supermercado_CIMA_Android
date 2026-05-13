@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, SafeAreaView, useWindowDimensions, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL, getHeaders } from '../../constants/API';
 
-const { width } = Dimensions.get('window');
-
 export default function ShopScreen() {
+  const { width } = useWindowDimensions();
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [cart, setCart] = useState([]);
@@ -260,23 +259,25 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   productList: {
-    padding: 10,
+    padding: 8,
     paddingBottom: 100, // Space for floating cart
   },
   row: {
     justifyContent: 'space-between',
   },
   productCard: {
-    width: (width / 2) - 15,
+    flex: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 15,
     marginBottom: 15,
+    marginHorizontal: 8,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
+    minHeight: 240, // Asegurar que siempre quepa el contenido y el botón
   },
   productImage: {
     width: '100%',

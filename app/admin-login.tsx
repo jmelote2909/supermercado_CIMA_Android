@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, StyleSheet, 
-  KeyboardAvoidingView, Platform, Dimensions, SafeAreaView, ActivityIndicator
+  KeyboardAvoidingView, Platform, useWindowDimensions, SafeAreaView, ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { API_URL, getHeaders } from '../constants/API';
 
-const { width } = Dimensions.get('window');
-
 export default function AdminLoginScreen() {
+  const { width } = useWindowDimensions();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
