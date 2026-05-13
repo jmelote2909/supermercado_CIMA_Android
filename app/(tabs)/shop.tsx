@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -17,6 +17,7 @@ export default function ShopScreen() {
   const [loading, setLoading] = useState(true);
   const [isCartVisible, setCartVisible] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
+  const [description, setDescription] = useState('');
 
   useEffect(() => {
     loadUser();
@@ -67,11 +68,13 @@ export default function ShopScreen() {
           username: currentUser || 'Usuario', 
           items: cart,
           status: 'Pendiente',
-          date: new Date().toLocaleString()
+          date: new Date().toLocaleString(),
+          description: description
         })
       });
       alert('¡Pedido realizado con éxito!');
       setCart([]);
+      setDescription('');
       setCartVisible(false);
     } catch (e) {
       alert('Error al realizar el pedido');
@@ -197,6 +200,19 @@ export default function ShopScreen() {
                 <Text style={styles.emptyText}>El carrito está vacío</Text>
               }
             />
+
+            <View style={styles.descriptionSection}>
+              <Text style={styles.descriptionLabel}>Descripción / Notas (opcional):</Text>
+              <TextInput
+                style={styles.descriptionInput}
+                placeholder="Escribe aquí cualquier aclaración sobre tu pedido..."
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                value={description}
+                onChangeText={setDescription}
+              />
+            </View>
 
             <View style={styles.cartFooter}>
               <TouchableOpacity 
@@ -402,5 +418,28 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 40,
     fontSize: 16,
+  },
+  descriptionSection: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  descriptionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  descriptionInput: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    color: '#1F2937',
+    textAlignVertical: 'top',
+    height: 80,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   }
 });

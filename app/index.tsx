@@ -62,10 +62,10 @@ export default function LoginScreen() {
         >
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <MaterialCommunityIcons name="cart-outline" size={60} color="#10B981" />
+              <MaterialCommunityIcons name="wrench-outline" size={60} color="#10B981" />
             </View>
             <Text style={styles.title}>CIMA</Text>
-            <Text style={styles.subtitle}>Supermarket Orders</Text>
+            <Text style={styles.subtitle}>Pedidos de Repuesto</Text>
           </View>
 
           <View style={styles.form}>

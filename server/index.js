@@ -119,6 +119,7 @@ async function sendOrderEmail(targetEmail, order) {
       <h3>Listado de productos:</h3>
       ${itemsHtml}
       <hr />
+      ${order.description ? `<p><b>Descripción/Notas:</b> ${order.description}</p><hr />` : ''}
       <p>Puedes gestionar este pedido desde el Panel de Administrador de la App.</p>
     `
   };
@@ -338,15 +339,15 @@ app.get('/api/orders', async (req, res) => {
 app.post('/api/orders', async (req, res) => {
   try {
     console.log('Recibida petición de pedido:', req.body);
-    const { username, items, status, date } = req.body;
-    const result = await db.run('INSERT INTO orders (username, items, status, date) VALUES ($1, $2, $3, $4) RETURNING id', [username, JSON.stringify(items), status, date]);
+    const { username, items, status, date, description } = req.body;
+    const result = await db.run('INSERT INTO orders (username, items, status, date, description) VALUES ($1, $2, $3, $4, $5) RETURNING id', [username, JSON.stringify(items), status, date, description || '']);
     
     // Obtener el correo destino de la configuración
     const config = await db.get("SELECT value FROM config WHERE key = 'target_email'");
     console.log('Enviando email a:', config.value);
     
     // Enviar el correo
-    await sendOrderEmail(config.value, { id: result.lastID, username, items: JSON.stringify(items), date });
+    await sendOrderEmail(config.value, { id: result.lastID, username, items: JSON.stringify(items), date, description });
     
     res.json({ success: true });
   } catch (e) {
@@ -564,7 +565,8 @@ const PORT = process.env.PORT || 3000;
         username VARCHAR(255),
         items TEXT,
         status VARCHAR(50),
-        date VARCHAR(100)
+        date VARCHAR(100),
+        description TEXT
       );
 
       CREATE TABLE IF NOT EXISTS config (
@@ -583,6 +585,14 @@ const PORT = process.env.PORT || 3000;
       console.log('Foreign key constraint updated (ON DELETE CASCADE)');
     } catch (fkError) {
       console.warn('Could not update foreign key constraint (might already be correct or name differs):', fkError.message);
+    }
+
+    // Asegurar columna description en orders
+    try {
+      await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS description TEXT;`);
+      console.log('Column "description" ensured in orders table');
+    } catch (descErr) {
+      console.warn('Could not ensure "description" column:', descErr.message);
     }
 
     // Initial Data

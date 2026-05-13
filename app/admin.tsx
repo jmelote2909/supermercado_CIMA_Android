@@ -396,7 +396,7 @@ export default function AdminScreen() {
             <Text style={styles.manualText}>1.- Entra en "Gestionar tu cuenta de Google"</Text>
             <Text style={styles.manualText}>2.- En el buscador busca "Contraseñas de aplicación"</Text>
             <Text style={styles.manualText}>3.- Crea una nueva específica para esta App.</Text>
-            <Text style={styles.manualText}>4.- Pega la contraseña de 16 letras y tu Gmail abajo.</Text>
+            <Text style={styles.manualText}>4.- Pega la contraseña de 16 letras (sin espacios) y tu Gmail abajo.</Text>
           </View>
 
           <View style={styles.inputContainer}>
