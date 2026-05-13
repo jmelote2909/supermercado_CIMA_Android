@@ -108,7 +108,7 @@ async function sendOrderEmail(targetEmail, order) {
   itemsHtml += '</ul>';
 
   const mailOptions = {
-    from: `"Supermercado CIMA" <${targetEmail}>`,
+    from: `"CIMA - Pedido de Repuestos" <${targetEmail}>`,
     to: targetEmail,
     subject: `Nuevo Pedido Recibido - ${order.username}`,
     html: `
@@ -418,9 +418,9 @@ app.post('/api/config/test_email', async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: `"Supermercado CIMA" <${target.value}>`,
+      from: `"CIMA - Pedido de Repuestos" <${target.value}>`,
       to: target.value,
-      subject: 'Prueba de Conexión - Supermercado CIMA',
+      subject: 'Prueba de Conexión - CIMA - Pedido de Repuestos',
       text: 'Si recibes esto, la configuración de tu App es correcta.'
     });
     res.json({ success: true });
